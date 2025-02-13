@@ -72,26 +72,31 @@ public class BillingServiceImpl implements BillingService {
                 Campaign campaign = campaignRepository.findById(id)
                         .orElseThrow(() -> new BadRequestException("Campaign tidak ditemukan"));
                 billing.setCampaign(campaign);
+                billing.setAccount("000002");
                 break;
             case "zakat":
                 Zakat zakat = zakatRepository.findById(id)
                         .orElseThrow(() -> new BadRequestException("Zakat tidak ditemukan"));
                 billing.setZakat(zakat);
+                billing.setAccount("000001");
                 break;
             case "infak":
                 Infak infak = infakRepository.findById(id)
                         .orElseThrow(() -> new BadRequestException("Infak tidak ditemukan"));
                 billing.setInfak(infak);
+                billing.setAccount("000002");
                 break;
             case "wakaf":
                 Wakaf wakaf = wakafRepository.findById(id)
                         .orElseThrow(() -> new BadRequestException("Wakaf tidak ditemukan"));
                 billing.setWakaf(wakaf);
+                billing.setAccount("000003");
                 break;
             case "dskl":
                 DSKL dskl = dsklRepository.findById(id)
                         .orElseThrow(() -> new BadRequestException("DSKL tidak ditemukan"));
                 billing.setDskl(dskl);
+                billing.setAccount("000003");
                 break;
             default:
                 throw new IllegalArgumentException("Invalid billing type: " + categoryType);

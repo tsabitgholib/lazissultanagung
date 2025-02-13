@@ -5,6 +5,7 @@ import com.lazis.lazissultanagung.dto.response.AmilZiswafResponse;
 import com.lazis.lazissultanagung.dto.response.SummaryResponse;
 import com.lazis.lazissultanagung.exception.BadRequestException;
 import com.lazis.lazissultanagung.model.Admin;
+import com.lazis.lazissultanagung.model.PercentageForCampaign;
 import com.lazis.lazissultanagung.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -48,6 +49,12 @@ public class SummaryServiceImpl implements SummaryService {
 
     @Autowired
     private DSKLRepository dsklRepository;
+
+    @Autowired
+    private PercentageForCampaignRepository percentageForCampaignRepository;
+
+    @Autowired
+    private PercentageForCampaignService percentageForCampaignService;
 
     @Override
     public SummaryResponse getSummary() {
@@ -98,7 +105,10 @@ public class SummaryServiceImpl implements SummaryService {
             case "zakat":
                 resultPage = zakatRepository.findAll(pageable).map(zakat -> {
                     double amount = zakat.getAmount();
-                    double amil = amount * 0.125;
+                    double percentage = percentageForCampaignService.getPercentageByIdOne()
+                            .map(PercentageForCampaign::getPercentage)
+                            .orElse(0.0);
+                    double amil = amount * percentage;
                     totals[0] += amount; // Menambahkan ke totalAmount
                     totals[1] += amil;   // Menambahkan ke totalAmil
                     // Tambahkan objek AmilZiswafResponse ke dalam list response
@@ -115,7 +125,10 @@ public class SummaryServiceImpl implements SummaryService {
             case "infak":
                 resultPage = infakRepository.findAll(pageable).map(infak -> {
                     double amount = infak.getAmount();
-                    double amil = amount * 0.125;
+                    double percentage = percentageForCampaignService.getPercentageByIdOne()
+                            .map(PercentageForCampaign::getPercentage)
+                            .orElse(0.0);
+                    double amil = amount * percentage;
                     totals[0] += amount;
                     totals[1] += amil;
                     return new AmilZiswafResponse(
@@ -147,7 +160,10 @@ public class SummaryServiceImpl implements SummaryService {
             case "dskl":
                 resultPage = dsklRepository.findAll(pageable).map(dskl -> {
                     double amount = dskl.getAmount();
-                    double amil = amount * 0.125;
+                    double percentage = percentageForCampaignService.getPercentageByIdOne()
+                            .map(PercentageForCampaign::getPercentage)
+                            .orElse(0.0);
+                    double amil = amount * percentage;
                     totals[0] += amount;
                     totals[1] += amil;
                     return new AmilZiswafResponse(
@@ -163,7 +179,10 @@ public class SummaryServiceImpl implements SummaryService {
             case "campaign":
                 resultPage = campaignRepository.findAll(pageable).map(campaign -> {
                     double amount = campaign.getCurrentAmount();
-                    double amil = amount * 0.125;
+                    double percentage = percentageForCampaignService.getPercentageByIdOne()
+                            .map(PercentageForCampaign::getPercentage)
+                            .orElse(0.0);
+                    double amil = amount * percentage;
                     totals[0] += amount;
                     totals[1] += amil;
                     return new AmilCampaignResponse(

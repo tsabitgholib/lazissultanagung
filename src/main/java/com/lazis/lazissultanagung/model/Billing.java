@@ -49,6 +49,7 @@ public class Billing {
     private String vaNumber;
     private String method;
     private String time;
+    private String account;
 
     @Column(name = "transactionQrId")
     private long transactionQrId;
