@@ -19,7 +19,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -62,16 +68,32 @@ public class CampaignServiceImpl implements CampaignService {
                 throw new BadRequestException("Hanya Admin dan Operator yang bisa membuat campaign");
             }
 
-            String imageUrl = null;
+            String imageName = null;
             if (campaignRequest.getCampaignImage() != null && !campaignRequest.getCampaignImage().isEmpty()) {
-                imageUrl = cloudinaryService.upload(campaignRequest.getCampaignImage());
+                try {
+                    MultipartFile file = campaignRequest.getCampaignImage();
+                    String uploadDir = "uploads/";
+                    File uploadPath = new File(uploadDir);
+                    if (!uploadPath.exists()) {
+                        uploadPath.mkdirs(); // Buat folder jika belum ada
+                    }
+
+                    // Buat nama file unik
+                        String fileName = file.getOriginalFilename();
+                    File destinationFile = new File(uploadDir + fileName);
+                    file.transferTo(destinationFile);
+
+                    imageName = fileName; // Simpan nama file saja di database
+                } catch (IOException e) {
+                    throw new RuntimeException("Gagal menyimpan gambar", e);
+                }
             }
 
             Campaign campaign = new Campaign();
             campaign.setCampaignCategory(campaignCategory);
             campaign.setCampaignName(campaignRequest.getCampaignName());
             campaign.setCampaignCode(campaignRequest.getCampaignCode());
-            campaign.setCampaignImage(imageUrl);
+            campaign.setCampaignImage(imageName);
             campaign.setDescription(campaignRequest.getDescription());
             campaign.setLocation(campaignRequest.getLocation());
             campaign.setTargetAmount(campaignRequest.getTargetAmount());
@@ -125,17 +147,32 @@ public class CampaignServiceImpl implements CampaignService {
                 throw new BadRequestException("Hanya Admin dan Operator yang bisa mengedit campaign");
             }
 
-            // Mengunggah gambar campaign jika ada
-            String imageUrl = existingCampaign.getCampaignImage(); // gambar lama
+            String imageName = existingCampaign.getCampaignImage();
             if (campaignRequest.getCampaignImage() != null && !campaignRequest.getCampaignImage().isEmpty()) {
-                imageUrl = cloudinaryService.upload(campaignRequest.getCampaignImage());
+                try {
+                    MultipartFile file = campaignRequest.getCampaignImage();
+                    String uploadDir = "uploads/";
+                    File uploadPath = new File(uploadDir);
+                    if (!uploadPath.exists()) {
+                        uploadPath.mkdirs(); // Buat folder jika belum ada
+                    }
+
+                    // Buat nama file unik
+                    String fileName = file.getOriginalFilename();
+                    File destinationFile = new File(uploadDir + fileName);
+                    file.transferTo(destinationFile);
+
+                    imageName = fileName; // Simpan nama file saja di database
+                } catch (IOException e) {
+                    throw new RuntimeException("Gagal menyimpan gambar", e);
+                }
             }
 
             // Mengupdate field campaign yang diperbolehkan
             existingCampaign.setCampaignCategory(campaignCategory);
             existingCampaign.setCampaignName(campaignRequest.getCampaignName());
             existingCampaign.setCampaignCode(campaignRequest.getCampaignCode());
-            existingCampaign.setCampaignImage(imageUrl);
+            existingCampaign.setCampaignImage(imageName);
             existingCampaign.setDescription(campaignRequest.getDescription());
             existingCampaign.setLocation(campaignRequest.getLocation());
             existingCampaign.setTargetAmount(campaignRequest.getTargetAmount());
@@ -162,7 +199,13 @@ public class CampaignServiceImpl implements CampaignService {
                     CampaignResponse response = modelMapper.map(campaign, CampaignResponse.class);
                     response.setCampaignCategory(campaign.getCampaignCategory().getCampaignCategory());
                     response.setCreator(campaign.getAdmin().getUsername()); // Set creator's username
-                    // Tambahan mapping yang diperlukan
+
+                    // Tambahkan URL gambar jika ada
+                    if (campaign.getCampaignImage() != null) {
+                        String baseUrl = "http://localhost:8080/api/files/";
+                        response.setCampaignImage(baseUrl + campaign.getCampaignImage());
+                    }
+
                     return response;
                 })
                 .collect(Collectors.toList());
@@ -175,6 +218,13 @@ public class CampaignServiceImpl implements CampaignService {
                     CampaignResponse response = modelMapper.map(campaign, CampaignResponse.class);
                     response.setCampaignCategory(campaign.getCampaignCategory().getCampaignCategory());
                     response.setCreator(campaign.getAdmin().getUsername());
+
+                    // Tambahkan URL gambar jika ada
+                    if (campaign.getCampaignImage() != null) {
+                        String baseUrl = "http://localhost:8080/api/files/";
+                        response.setCampaignImage(baseUrl + campaign.getCampaignImage());
+                    }
+
                     return response;
                 });
     }
@@ -257,6 +307,13 @@ public class CampaignServiceImpl implements CampaignService {
             response.setDisplayId(counter.getAndIncrement());
             response.setCampaignCategory(campaign.getCampaignCategory().getCampaignCategory());
             response.setCreator(campaign.getAdmin().getUsername());
+
+            // Tambahkan URL gambar jika ada
+            if (campaign.getCampaignImage() != null) {
+                String baseUrl = "http://localhost:8080/api/files/";
+                response.setCampaignImage(baseUrl + campaign.getCampaignImage());
+            }
+
             return response;
         });
     }
@@ -277,6 +334,13 @@ public class CampaignServiceImpl implements CampaignService {
             response.setDisplayId(counter.getAndIncrement());
             response.setCampaignCategory(campaign.getCampaignCategory().getCampaignCategory());
             response.setCreator(campaign.getAdmin().getUsername());
+
+            // Tambahkan URL gambar jika ada
+            if (campaign.getCampaignImage() != null) {
+                String baseUrl = "http://localhost:8080/api/files/";
+                response.setCampaignImage(baseUrl + campaign.getCampaignImage());
+            }
+
             return response;
         });
     }
@@ -297,6 +361,13 @@ public class CampaignServiceImpl implements CampaignService {
             response.setDisplayId(counter.getAndIncrement());
             response.setCampaignCategory(campaign.getCampaignCategory().getCampaignCategory());
             response.setCreator(campaign.getAdmin().getUsername());
+
+            // Tambahkan URL gambar jika ada
+            if (campaign.getCampaignImage() != null) {
+                String baseUrl = "http://localhost:8080/api/files/";
+                response.setCampaignImage(baseUrl + campaign.getCampaignImage());
+            }
+
             return response;
         });
     }
@@ -317,6 +388,13 @@ public class CampaignServiceImpl implements CampaignService {
             response.setDisplayId(counter.getAndIncrement());
             response.setCampaignCategory(campaign.getCampaignCategory().getCampaignCategory());
             response.setCreator(campaign.getAdmin().getUsername());
+
+            // Tambahkan URL gambar jika ada
+            if (campaign.getCampaignImage() != null) {
+                String baseUrl = "http://localhost:8080/api/files/";
+                response.setCampaignImage(baseUrl + campaign.getCampaignImage());
+            }
+
             return response;
         });
     }
@@ -337,6 +415,13 @@ public class CampaignServiceImpl implements CampaignService {
             response.setDisplayId(counter.getAndIncrement());
             response.setCampaignCategory(campaign.getCampaignCategory().getCampaignCategory());
             response.setCreator(campaign.getAdmin().getUsername());
+
+            // Tambahkan URL gambar jika ada
+            if (campaign.getCampaignImage() != null) {
+                String baseUrl = "http://localhost:8080/api/files/";
+                response.setCampaignImage(baseUrl + campaign.getCampaignImage());
+            }
+
             return response;
         });
     }
@@ -357,6 +442,13 @@ public class CampaignServiceImpl implements CampaignService {
             response.setDisplayId(counter.getAndIncrement());
             response.setCampaignCategory(campaign.getCampaignCategory().getCampaignCategory());
             response.setCreator(campaign.getAdmin().getUsername());
+
+            // Tambahkan URL gambar jika ada
+            if (campaign.getCampaignImage() != null) {
+                String baseUrl = "http://localhost:8080/api/files/";
+                response.setCampaignImage(baseUrl + campaign.getCampaignImage());
+            }
+
             return response;
         });
     }
@@ -377,6 +469,13 @@ public class CampaignServiceImpl implements CampaignService {
             response.setDisplayId(counter.getAndIncrement());
             response.setCampaignCategory(campaign.getCampaignCategory().getCampaignCategory());
             response.setCreator(campaign.getAdmin().getUsername());
+
+            // Tambahkan URL gambar jika ada
+            if (campaign.getCampaignImage() != null) {
+                String baseUrl = "http://localhost:8080/api/files/";
+                response.setCampaignImage(baseUrl + campaign.getCampaignImage());
+            }
+
             return response;
         });
     }
@@ -397,6 +496,13 @@ public class CampaignServiceImpl implements CampaignService {
             response.setDisplayId(counter.getAndIncrement());
             response.setCampaignCategory(campaign.getCampaignCategory().getCampaignCategory());
             response.setCreator(campaign.getAdmin().getUsername());
+
+            // Tambahkan URL gambar jika ada
+            if (campaign.getCampaignImage() != null) {
+                String baseUrl = "http://localhost:8080/api/files/";
+                response.setCampaignImage(baseUrl + campaign.getCampaignImage());
+            }
+
             return response;
         });
     }
@@ -421,6 +527,13 @@ public class CampaignServiceImpl implements CampaignService {
                 response.setDisplayId(counter.getAndIncrement());
                 response.setCampaignCategory(campaign.getCampaignCategory().getCampaignCategory());
                 response.setCreator(campaign.getAdmin().getUsername());
+
+                // Tambahkan URL gambar jika ada
+                if (campaign.getCampaignImage() != null) {
+                    String baseUrl = "http://localhost:8080/api/files/";
+                    response.setCampaignImage(baseUrl + campaign.getCampaignImage());
+                }
+
                 return response;
             });
         } else {
@@ -448,6 +561,13 @@ public class CampaignServiceImpl implements CampaignService {
                 response.setDisplayId(counter.getAndIncrement());
                 response.setCampaignCategory(campaign.getCampaignCategory().getCampaignCategory());
                 response.setCreator(campaign.getAdmin().getUsername());
+
+                // Tambahkan URL gambar jika ada
+                if (campaign.getCampaignImage() != null) {
+                    String baseUrl = "http://localhost:8080/api/files/";
+                    response.setCampaignImage(baseUrl + campaign.getCampaignImage());
+                }
+
                 return response;
             });
         } else {
@@ -475,6 +595,13 @@ public class CampaignServiceImpl implements CampaignService {
                 response.setDisplayId(counter.getAndIncrement());
                 response.setCampaignCategory(campaign.getCampaignCategory().getCampaignCategory());
                 response.setCreator(campaign.getAdmin().getUsername());
+
+                // Tambahkan URL gambar jika ada
+                if (campaign.getCampaignImage() != null) {
+                    String baseUrl = "http://localhost:8080/api/files/";
+                    response.setCampaignImage(baseUrl + campaign.getCampaignImage());
+                }
+
                 return response;
             });
         } else {
@@ -502,6 +629,13 @@ public class CampaignServiceImpl implements CampaignService {
                 response.setDisplayId(counter.getAndIncrement());
                 response.setCampaignCategory(campaign.getCampaignCategory().getCampaignCategory());
                 response.setCreator(campaign.getAdmin().getUsername());
+
+                // Tambahkan URL gambar jika ada
+                if (campaign.getCampaignImage() != null) {
+                    String baseUrl = "http://localhost:8080/api/files/";
+                    response.setCampaignImage(baseUrl + campaign.getCampaignImage());
+                }
+
                 return response;
             });
         } else {
