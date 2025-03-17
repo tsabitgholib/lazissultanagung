@@ -10,11 +10,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.Valid;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -35,14 +38,13 @@ public class CampaignController {
     @PostMapping("/create")
     public ResponseEntity<CampaignResponse> createCampaign(@Valid @ModelAttribute CampaignRequest campaignRequest) {
         try {
-            // Call service to create campaign
             CampaignResponse campaignResponse = campaignService.createCampaign(campaignRequest);
             return new ResponseEntity<>(campaignResponse, HttpStatus.CREATED);
         } catch (Exception e) {
-            // Handle exceptions and return appropriate response
             return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
         }
     }
+
 
     @PutMapping("/edit/{id}")
     public ResponseEntity<CampaignResponse> editCampaign(

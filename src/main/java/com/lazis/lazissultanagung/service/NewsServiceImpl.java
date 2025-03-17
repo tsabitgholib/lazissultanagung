@@ -40,6 +40,9 @@ public class NewsServiceImpl implements NewsService {
     @Autowired
     private ModelMapper modelMapper;
 
+    @Autowired
+    private FileStorageService fileStorageService;
+
     @Override
     public Page<NewsResponse> getAllNews(Pageable pageable) {
         return newsRepository.findAllApprovedNews(pageable)
@@ -47,6 +50,8 @@ public class NewsServiceImpl implements NewsService {
                     NewsResponse response = modelMapper.map(allNews, NewsResponse.class);
                     response.setNewsTopic(allNews.getNewsTopic().getNewsTopic());
                     response.setCreator(allNews.getAdmin().getUsername());
+                    response.setNewsImage("https://skyconnect.lazis-sa.org/api/images/"+allNews.getNewsImage());
+
                     return response;
                 });
     }
@@ -58,6 +63,8 @@ public class NewsServiceImpl implements NewsService {
                     NewsResponse response = modelMapper.map(existingNews, NewsResponse.class);
                     response.setNewsTopic(existingNews.getNewsTopic().getNewsTopic());
                     response.setCreator(existingNews.getAdmin().getUsername());
+                    response.setNewsImage("https://skyconnect.lazis-sa.org/api/images/"+existingNews.getNewsImage());
+
                     return response;
                 });
     }
@@ -77,7 +84,7 @@ public class NewsServiceImpl implements NewsService {
 
             String imageUrl = null;
             if (newsRequest.getNewsImage() != null && !newsRequest.getNewsImage().isEmpty()) {
-                imageUrl = cloudinaryService.upload(newsRequest.getNewsImage());
+                imageUrl = fileStorageService.saveFile(newsRequest.getNewsImage());
             }
             News news = new News();
             NewsTopic newsTopic = newsTopicRepository.findById(newsRequest.getNewsTopicId())
@@ -129,7 +136,7 @@ public class NewsServiceImpl implements NewsService {
 
             // Hanya perbarui gambar jika gambar baru diunggah
             if (newsRequest.getNewsImage() != null && !newsRequest.getNewsImage().isEmpty()) {
-                String imageUrl = cloudinaryService.upload(newsRequest.getNewsImage());
+                String imageUrl = fileStorageService.saveFile(newsRequest.getNewsImage());
                 updateNews.setNewsImage(imageUrl);
             }
 
@@ -195,6 +202,8 @@ public class NewsServiceImpl implements NewsService {
             NewsResponse response = modelMapper.map(news, NewsResponse.class);
             response.setNewsTopic(news.getNewsTopic().getNewsTopic());
             response.setCreator(news.getAdmin().getUsername());
+            response.setNewsImage("https://skyconnect.lazis-sa.org/api/images/"+news.getNewsImage());
+
             return response;
         });
     }

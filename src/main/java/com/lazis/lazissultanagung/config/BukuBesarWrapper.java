@@ -14,7 +14,3 @@ public class BukuBesarWrapper {
     private double saldoAwal2;
     private List<BukuBesarResponse> bukuBesarCoa2;
 }
-
-
-
-
