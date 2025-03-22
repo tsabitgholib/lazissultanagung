@@ -1,6 +1,7 @@
 package com.lazis.lazissultanagung.repository;
 
 import com.lazis.lazissultanagung.model.News;
+import com.lazis.lazissultanagung.model.NewsTopic;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -21,5 +22,7 @@ public interface NewsRepository extends JpaRepository<News, Long> {
     Page<News> findByTitleAndTopic(@Param("title") String title,
                                    @Param("newsTopic") String newsTopic,
                                    Pageable pageable);
+
+    boolean existsByNewsTopic(NewsTopic newsTopic);
 
 }

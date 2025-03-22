@@ -52,6 +52,8 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 
     List<Transaction> findByPhoneNumber(String phoneNumber);
 
+    List<Transaction> findByEmail(String email);
+
     @Query("SELECT COALESCE(SUM(t.debit), 0.0) " +
             "FROM Transaction t WHERE t.penyaluran = false")
     Double totalTransactionAmount();
@@ -104,8 +106,9 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
             "t.debit != 0 AND t.penyaluran = false")
     Page<Transaction> searchTransactions(@Param("search") String search, Pageable pageable);
 
-    @Query("SELECT SUM(t.debit) FROM Transaction t WHERE t.donatur.id = :donaturId AND t.debit != 0 AND t.category = :category AND t.penyaluran = false")
-    Double sumTransactionByDonaturAndCategory(Long donaturId, String category);
+    @Query("SELECT SUM(t.debit) FROM Transaction t WHERE (t.email = :email OR t.phoneNumber = :phoneNumber) AND t.debit != 0 AND t.category = :category AND t.penyaluran = false")
+    Double sumTransactionByDonaturAndCategory(@Param("email") String email, @Param("phoneNumber") String phoneNumber, @Param("category") String category);
+
 
     List<Transaction> findByTransactionDateBetween(LocalDateTime startDate, LocalDateTime endDate);
 
@@ -165,7 +168,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
                                                   @Param("startDate") LocalDateTime startDate,
                                                   @Param("endDate") LocalDateTime endDate);
 
-
+    int countByZakatId(Long zakatId);
 
 
 

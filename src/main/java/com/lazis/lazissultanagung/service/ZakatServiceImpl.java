@@ -6,13 +6,16 @@ import com.lazis.lazissultanagung.exception.BadRequestException;
 import com.lazis.lazissultanagung.model.Admin;
 import com.lazis.lazissultanagung.model.Zakat;
 import com.lazis.lazissultanagung.repository.AdminRepository;
+import com.lazis.lazissultanagung.repository.TransactionRepository;
 import com.lazis.lazissultanagung.repository.ZakatRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -23,6 +26,9 @@ public class ZakatServiceImpl implements ZakatService {
 
     @Autowired
     private AdminRepository adminRepository;
+
+    @Autowired
+    private TransactionRepository transactionRepository;
 
     @Override
     public List<Zakat> getAllZakat(){
@@ -74,4 +80,29 @@ public class ZakatServiceImpl implements ZakatService {
         zakatRepository.delete(deleteZakat);
         return new ResponseMessage(true, "Zakat Berhasil Dihapus");
     }
+
+    @Override
+    public Map<String, Object> dataZakatFitrah(Long id) {
+        Map<String, Object> dataZakat = new HashMap<>();
+
+        Zakat zakatFitrah = zakatRepository.findById(id)
+                .orElseThrow(() -> new BadRequestException("Zakat tidak ditemukan"));
+
+        Double amount = zakatFitrah.getAmount();
+
+        if (amount == null || amount == 0) {
+            dataZakat.put("jumlah_donatur", 0);
+            dataZakat.put("total_zakat_fitrah", 0);
+        }
+
+        int jumlahDonaturZakatFitrah = transactionRepository.countByZakatId(id);
+
+        dataZakat.put("jumlah_donatur", jumlahDonaturZakatFitrah);
+        dataZakat.put("total_zakat_fitrah", amount);
+
+        return dataZakat;
+    }
+
+
+
 }

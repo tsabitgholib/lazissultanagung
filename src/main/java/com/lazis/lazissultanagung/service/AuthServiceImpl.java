@@ -62,7 +62,7 @@ public class AuthServiceImpl implements AuthService {
                 authentication = authenticationManager.authenticate(
                         new UsernamePasswordAuthenticationToken(signinRequest.getEmailOrPhoneNumber(), signinRequest.getPassword()));
             } catch (BadCredentialsException e) {
-                throw new BadRequestException("Password anda salah");
+                throw new BadRequestException("Password anda salah cie");
             }
 
         } else if (userType.equals("DONATUR")) {
@@ -229,7 +229,7 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() -> new BadRequestException("Akun dengan email ini tidak ditemukan"));
 
         // Generate password random
-        String randomPassword = generateRandomPassword(10);
+        String randomPassword = generateRandomPassword(6);
 
         // Hash password random dan simpan ke database
         existingDonatur.setPassword(encoder.encode(randomPassword));
@@ -256,7 +256,7 @@ public class AuthServiceImpl implements AuthService {
         adminRepository.save(existingAdmin);
 
         // Kirim email dengan password random ke pengguna
-        emailSenderService.sendEmailResetPassword(existingAdmin.getEmail(), "lAZIS Sultan Agung: Reset Password",
+        emailSenderService.sendEmailResetPassword(existingAdmin.getEmail(), "LAZIS Sultan Agung: Reset Password",
                 "Password baru Anda adalah: " + randomPassword);
 
         return new ResponseMessage(true, "Password berhasil direset. Silakan cek email Anda untuk password baru.");

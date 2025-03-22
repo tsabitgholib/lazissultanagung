@@ -49,6 +49,9 @@ public class DistributionServiceImpl implements DistributionService{
     @Autowired
     private CloudinaryService cloudinaryService;
 
+    @Autowired
+    private FileStorageService fileStorageService;
+
     @Override
     public Page<Distribution> getAllDistributions(Integer month, Integer year, Pageable pageable) {
         return distributionRepository.findAllByMonthAndYear(month, year, pageable)
@@ -123,7 +126,7 @@ public class DistributionServiceImpl implements DistributionService{
 
             String imageUrl = null;
             if (distributionRequest.getImage() != null && !distributionRequest.getImage().isEmpty()) {
-                imageUrl = cloudinaryService.upload(distributionRequest.getImage());
+                imageUrl = fileStorageService.saveFile(distributionRequest.getImage());
             }
             distribution.setImage(imageUrl);
             distribution.setCategory(categoryType);

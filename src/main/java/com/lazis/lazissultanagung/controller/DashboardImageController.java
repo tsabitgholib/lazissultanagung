@@ -17,10 +17,15 @@ public class DashboardImageController {
     @Autowired
     private DashboardImageService dashboardImageService;
 
+//    @GetMapping
+//    public ResponseEntity<List<DashboardImage>> getAllImage() {
+//        List<DashboardImage> dashboardImageList = dashboardImageService.getAllDashboardImage();
+//        return ResponseEntity.ok(dashboardImageList);
+//    }
+
     @GetMapping
-    public ResponseEntity<List<DashboardImage>> getAllImage() {
-        List<DashboardImage> dashboardImageList = dashboardImageService.getAllDashboardImage();
-        return ResponseEntity.ok(dashboardImageList);
+    public List<DashboardImage> getAllDashboardImages() {
+        return dashboardImageService.getAllDashboardImage();
     }
 
     @PostMapping("/create")

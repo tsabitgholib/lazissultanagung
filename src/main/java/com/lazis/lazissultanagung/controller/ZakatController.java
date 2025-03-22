@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @CrossOrigin(origins= {"*"}, maxAge = 4800, allowCredentials = "false" )
@@ -52,4 +53,9 @@ public class ZakatController {
         return zakatService.deleteZakat(id);
     }
 
+    @GetMapping("/data/{id}")
+    public ResponseEntity<Map<String, Object>> getDataZakatFitrah(@PathVariable Long id) {
+        Map<String, Object> dataZakat = zakatService.dataZakatFitrah(id);
+        return ResponseEntity.ok(dataZakat);
+    }
 }

@@ -91,7 +91,7 @@ public class PercentageForCampaignController {
         PercentageForCampaign percentageForCampaign = percentageForCampaignService.getPercentageByIdOne()
                 .orElseThrow(() -> new RuntimeException("Persentase biaya operasional tidak ditemukan"));
 
-        double biayaOperasionalPersen = percentageForCampaign.getPercentage(); // contoh: 4%
+        double biayaOperasionalPersen = percentageForCampaign.getPercentage();
         double biayaTransaksiPersen = 6;  // contoh: 6%
 
         // Hitung total biaya operasional dan transaksi
@@ -100,7 +100,7 @@ public class PercentageForCampaignController {
         // Dana untuk penggalangan dana
         double dana_untuk_penggalangan_dana = campaign.getCurrentAmount() - biayaOperasional;
 
-        double biayaTransaksi = dana_untuk_penggalangan_dana * (biayaTransaksiPersen / 100);
+        double biayaTransaksi = 0;
 
         // Hitung dana yang belum disalurkan
         double danaBelumDisalurkan = campaign.getCurrentAmount() - (totalDisbursed + biayaTransaksi);

@@ -13,6 +13,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class DashboardImageServiceImpl implements DashboardImageService{
@@ -26,9 +27,23 @@ public class DashboardImageServiceImpl implements DashboardImageService{
     @Autowired
     private AdminRepository adminRepository;
 
+    @Autowired
+    private FileStorageService fileStorageService;
+
     @Override
-    public List<DashboardImage> getAllDashboardImage(){
-        return dashboardImageRepository.findAll();
+    public List<DashboardImage> getAllDashboardImage() {
+        return dashboardImageRepository.findAll().stream().map(dashboardImage -> {
+            if (dashboardImage.getImage_1() != null && !dashboardImage.getImage_1().startsWith("http")) {
+                dashboardImage.setImage_1("https://skyconnect.lazis-sa.org/api/images/" + dashboardImage.getImage_1());
+            }
+            if (dashboardImage.getImage_2() != null && !dashboardImage.getImage_2().startsWith("http")) {
+                dashboardImage.setImage_2("https://skyconnect.lazis-sa.org/api/images/" + dashboardImage.getImage_2());
+            }
+            if (dashboardImage.getImage_3() != null && !dashboardImage.getImage_3().startsWith("http")) {
+                dashboardImage.setImage_3("https://skyconnect.lazis-sa.org/api/images/" + dashboardImage.getImage_3());
+            }
+            return dashboardImage;
+        }).collect(Collectors.toList());
     }
 
     @Override
@@ -47,19 +62,19 @@ public class DashboardImageServiceImpl implements DashboardImageService{
 
             String image_1url = null;
             if (dashboardImageRequest.getImage_1() != null && !dashboardImageRequest.getImage_1().isEmpty()) {
-                image_1url = cloudinaryService.upload(dashboardImageRequest.getImage_1());
+                image_1url = fileStorageService.saveFile(dashboardImageRequest.getImage_1());
             }
             dashboardImage.setImage_1(image_1url);
 
             String image_2url = null;
             if (dashboardImageRequest.getImage_2() != null && !dashboardImageRequest.getImage_2().isEmpty()) {
-                image_2url = cloudinaryService.upload(dashboardImageRequest.getImage_2());
+                image_2url = fileStorageService.saveFile(dashboardImageRequest.getImage_2());
             }
             dashboardImage.setImage_2(image_2url);
 
             String image_3url = null;
             if (dashboardImageRequest.getImage_3() != null && !dashboardImageRequest.getImage_3().isEmpty()) {
-                image_3url = cloudinaryService.upload(dashboardImageRequest.getImage_3());
+                image_3url = fileStorageService.saveFile(dashboardImageRequest.getImage_3());
             }
             dashboardImage.setImage_3(image_3url);
 
@@ -84,17 +99,17 @@ public class DashboardImageServiceImpl implements DashboardImageService{
                     .orElseThrow(() -> new BadRequestException("ID dashboard image tidak ditemukan"));
 
             if (dashboardImageRequest.getImage_1() != null && !dashboardImageRequest.getImage_1().isEmpty()) {
-                String image1Url = cloudinaryService.upload(dashboardImageRequest.getImage_1());
+                String image1Url = fileStorageService.saveFile(dashboardImageRequest.getImage_1());
                 dashboardImage.setImage_1(image1Url);
             }
 
             if (dashboardImageRequest.getImage_2() != null && !dashboardImageRequest.getImage_2().isEmpty()) {
-                String image2Url = cloudinaryService.upload(dashboardImageRequest.getImage_2());
+                String image2Url = fileStorageService.saveFile(dashboardImageRequest.getImage_2());
                 dashboardImage.setImage_2(image2Url);
             }
 
             if (dashboardImageRequest.getImage_3() != null && !dashboardImageRequest.getImage_3().isEmpty()) {
-                String image3Url = cloudinaryService.upload(dashboardImageRequest.getImage_3());
+                String image3Url = fileStorageService.saveFile(dashboardImageRequest.getImage_3());
                 dashboardImage.setImage_3(image3Url);
             }
 

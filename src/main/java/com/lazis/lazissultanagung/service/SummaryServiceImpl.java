@@ -108,7 +108,7 @@ public class SummaryServiceImpl implements SummaryService {
                     double percentage = percentageForCampaignService.getPercentageByIdOne()
                             .map(PercentageForCampaign::getPercentage)
                             .orElse(0.0);
-                    double amil = amount * percentage;
+                    double amil = amount * (percentage / 100);
                     totals[0] += amount; // Menambahkan ke totalAmount
                     totals[1] += amil;   // Menambahkan ke totalAmil
                     // Tambahkan objek AmilZiswafResponse ke dalam list response
@@ -128,7 +128,7 @@ public class SummaryServiceImpl implements SummaryService {
                     double percentage = percentageForCampaignService.getPercentageByIdOne()
                             .map(PercentageForCampaign::getPercentage)
                             .orElse(0.0);
-                    double amil = amount * percentage;
+                    double amil = amount * (percentage / 100);
                     totals[0] += amount;
                     totals[1] += amil;
                     return new AmilZiswafResponse(
@@ -163,7 +163,7 @@ public class SummaryServiceImpl implements SummaryService {
                     double percentage = percentageForCampaignService.getPercentageByIdOne()
                             .map(PercentageForCampaign::getPercentage)
                             .orElse(0.0);
-                    double amil = amount * percentage;
+                    double amil = amount * (percentage / 100);
                     totals[0] += amount;
                     totals[1] += amil;
                     return new AmilZiswafResponse(
@@ -182,7 +182,7 @@ public class SummaryServiceImpl implements SummaryService {
                     double percentage = percentageForCampaignService.getPercentageByIdOne()
                             .map(PercentageForCampaign::getPercentage)
                             .orElse(0.0);
-                    double amil = amount * percentage;
+                    double amil = amount * (percentage / 100);
                     totals[0] += amount;
                     totals[1] += amil;
                     return new AmilCampaignResponse(

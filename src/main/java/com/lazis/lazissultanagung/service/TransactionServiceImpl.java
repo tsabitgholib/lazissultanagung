@@ -265,7 +265,7 @@ public class TransactionServiceImpl implements TransactionService{
             int newTransactionNumber = (lastTransactionNumber == null ? 1 : lastTransactionNumber + 1);
 
             // Format nomor bukti
-            String transactionNumberFormatted = String.format("%03d", newTransactionNumber);
+            String transactionNumberFormatted = String.valueOf(newTransactionNumber);
             String staticPart = "LAZ";
             String datePart = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM/yyyy"));
             String nomorBukti = transactionNumberFormatted + "/" + staticPart + "/" + datePart;
@@ -450,41 +450,51 @@ public class TransactionServiceImpl implements TransactionService{
         if (authentication != null && authentication.getPrincipal() instanceof UserDetailsImpl) {
             UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 
-            // Ambil nomor telepon dari user yang login
+            // Ambil nomor telepon atau email dari user yang login
             String phoneNumber = userDetails.getPhoneNumber();
+            String email = userDetails.getEmail();
 
-            // Cari transaksi berdasarkan nomor telepon
-            List<Transaction> donaturTransactions = transactionRepository.findByPhoneNumber(phoneNumber);
+            List<Transaction> donaturTransactions;
 
-            // Konversi transaksi ke DTO
+            if (phoneNumber != null && !phoneNumber.isEmpty()) {
+                // Cari transaksi berdasarkan nomor telepon jika tersedia
+                donaturTransactions = transactionRepository.findByPhoneNumber(phoneNumber);
+            } else {
+                // Jika nomor telepon tidak ada, cari berdasarkan email
+                donaturTransactions = transactionRepository.findByEmail(email);
+            }
+
+            // Konversi transaksi ke DTO hanya jika debit > 0
             List<DonaturTransactionsHistoryResponse> donaturTransactionsHistory = new ArrayList<>();
             for (Transaction transaction : donaturTransactions) {
-                DonaturTransactionsHistoryResponse transactionDTO = new DonaturTransactionsHistoryResponse();
-                transactionDTO.setUsername(transaction.getUsername());
-                transactionDTO.setTransactionAmount(transaction.getTransactionAmount());
-                transactionDTO.setMessage(transaction.getMessage());
-                transactionDTO.setTransactionDate(transaction.getTransactionDate());
-                transactionDTO.setSuccess(transaction.isSuccess());
+                if (transaction.getDebit() > 0) { // Filter hanya transaksi dengan debit > 0
+                    DonaturTransactionsHistoryResponse transactionDTO = new DonaturTransactionsHistoryResponse();
+                    transactionDTO.setUsername(transaction.getUsername());
+                    transactionDTO.setTransactionAmount(transaction.getTransactionAmount());
+                    transactionDTO.setMessage(transaction.getMessage());
+                    transactionDTO.setTransactionDate(transaction.getTransactionDate());
+                    transactionDTO.setSuccess(transaction.isSuccess());
 
-                // Tentukan tipe transaksi dan nama transaksinya
-                Object categoryData = getCategoryData(transaction);
-                if (categoryData != null) {
-                    if (categoryData instanceof Campaign) {
-                        transactionDTO.setCategory("Campaign");
-                        transactionDTO.setTransactionName(((Campaign) categoryData).getCampaignName());
-                    } else if (categoryData instanceof Zakat) {
-                        transactionDTO.setCategory("Zakat");
-                        transactionDTO.setTransactionName(((Zakat) categoryData).getCategoryName());
-                    } else if (categoryData instanceof Infak) {
-                        transactionDTO.setCategory("Infak");
-                        transactionDTO.setTransactionName(((Infak) categoryData).getCategoryName());
-                    } else if (categoryData instanceof Wakaf) {
-                        transactionDTO.setCategory("Wakaf");
-                        transactionDTO.setTransactionName(((Wakaf) categoryData).getCategoryName());
+                    // Tentukan tipe transaksi dan nama transaksinya
+                    Object categoryData = getCategoryData(transaction);
+                    if (categoryData != null) {
+                        if (categoryData instanceof Campaign) {
+                            transactionDTO.setCategory("Campaign");
+                            transactionDTO.setTransactionName(((Campaign) categoryData).getCampaignName());
+                        } else if (categoryData instanceof Zakat) {
+                            transactionDTO.setCategory("Zakat");
+                            transactionDTO.setTransactionName(((Zakat) categoryData).getCategoryName());
+                        } else if (categoryData instanceof Infak) {
+                            transactionDTO.setCategory("Infak");
+                            transactionDTO.setTransactionName(((Infak) categoryData).getCategoryName());
+                        } else if (categoryData instanceof Wakaf) {
+                            transactionDTO.setCategory("Wakaf");
+                            transactionDTO.setTransactionName(((Wakaf) categoryData).getCategoryName());
+                        }
                     }
-                }
 
-                donaturTransactionsHistory.add(transactionDTO);
+                    donaturTransactionsHistory.add(transactionDTO);
+                }
             }
 
             return donaturTransactionsHistory;
@@ -493,32 +503,34 @@ public class TransactionServiceImpl implements TransactionService{
         throw new BadRequestException("Donatur tidak ditemukan");
     }
 
+
     @Override
     public Map<String, Double> getTransactionSummaryForDonatur(Authentication authentication) {
         if (authentication != null && authentication.getPrincipal() instanceof UserDetailsImpl) {
             UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-            Donatur donatur = donaturRepository.findByPhoneNumber(userDetails.getPhoneNumber())
+            Donatur donatur = donaturRepository.findByEmail(userDetails.getEmail())
+                    .or(() -> donaturRepository.findByPhoneNumber(userDetails.getPhoneNumber())) // Coba cari berdasarkan email jika phoneNumber tidak ditemukan
                     .orElseThrow(() -> new BadRequestException("DONATUR TIDAK ADA"));
 
             Map<String, Double> summary = new HashMap<>();
 
             // Infak
-            Double infakTotal = transactionRepository.sumTransactionByDonaturAndCategory(donatur.getId(), "Infak");
+            Double infakTotal = transactionRepository.sumTransactionByDonaturAndCategory(donatur.getEmail(), donatur.getPhoneNumber(), "Infak");
             summary.put("Infak", infakTotal != null ? infakTotal : 0.0);
 
             // Wakaf
-            Double wakafTotal = transactionRepository.sumTransactionByDonaturAndCategory(donatur.getId(), "Wakaf");
+            Double wakafTotal = transactionRepository.sumTransactionByDonaturAndCategory(donatur.getEmail(), donatur.getPhoneNumber(), "Wakaf");
             summary.put("Wakaf", wakafTotal != null ? wakafTotal : 0.0);
 
             // Zakat
-            Double zakatTotal = transactionRepository.sumTransactionByDonaturAndCategory(donatur.getId(), "Zakat");
+            Double zakatTotal = transactionRepository.sumTransactionByDonaturAndCategory(donatur.getEmail(), donatur.getPhoneNumber(), "Zakat");
             summary.put("Zakat", zakatTotal != null ? zakatTotal : 0.0);
 
             // Campaign
-            Double campaignTotal = transactionRepository.sumTransactionByDonaturAndCategory(donatur.getId(), "Campaign");
+            Double campaignTotal = transactionRepository.sumTransactionByDonaturAndCategory(donatur.getEmail(), donatur.getPhoneNumber(), "Campaign");
             summary.put("Campaign", campaignTotal != null ? campaignTotal : 0.0);
 
-            Double dsklTotal = transactionRepository.sumTransactionByDonaturAndCategory(donatur.getId(), "dskl");
+            Double dsklTotal = transactionRepository.sumTransactionByDonaturAndCategory(donatur.getEmail(), donatur.getPhoneNumber(), "dskl");
             summary.put("Dskl", dsklTotal != null ? dsklTotal : 0.0);
 
             // Total keseluruhan

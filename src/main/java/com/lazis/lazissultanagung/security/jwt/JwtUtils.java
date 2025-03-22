@@ -29,7 +29,7 @@ public class JwtUtils {
         UserDetailsImpl userPrincipal = (UserDetailsImpl) authentication.getPrincipal();
 
         return Jwts.builder()
-                .setSubject(userPrincipal.getPhoneNumber()) // Gunakan berupa nomor telepon atau email
+                .setSubject(userPrincipal.getPhoneNumber() != null ? userPrincipal.getPhoneNumber() : userPrincipal.getEmail())
                 .setIssuedAt(new Date())
                 .setExpiration(new Date((new Date()).getTime() + jwtExpirationMs))
                 .signWith(key(), SignatureAlgorithm.HS256)

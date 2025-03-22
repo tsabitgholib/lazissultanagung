@@ -5,6 +5,7 @@ import com.lazis.lazissultanagung.exception.BadRequestException;
 import com.lazis.lazissultanagung.model.Zakat;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 
@@ -18,4 +19,6 @@ public interface ZakatService {
     Optional<Zakat> getZakatById(Long id);
 
     ResponseMessage deleteZakat(Long id);
+
+    Map<String, Object> dataZakatFitrah(Long id);
 }

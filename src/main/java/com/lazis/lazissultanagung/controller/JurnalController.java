@@ -282,7 +282,7 @@ public class JurnalController {
                 // Hitung breakdown untuk setiap sub-akun
                 for (Coa subCoa : subAccounts) {
                     Map<String, Double> subBreakdown = calculateMonthlyBreakdown(subCoa.getId(), month1, year1, month2, year2);
-                    parentBreakdown.put(subCoa.getAccountName(), subBreakdown);
+                    parentBreakdown.put(subCoa.getAccountCode() + " " + subCoa.getAccountName(), subBreakdown);
 
                     // Tambahkan nilai bulanan ke monthlyTotals
                     subBreakdown.forEach((month, value) ->

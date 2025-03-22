@@ -44,7 +44,7 @@ public class BukuBesarService {
         }
 
         if (coaId2 != null) {
-            double saldoAwal2 = calculateSaldoAwal(coaId2, startDate);
+            double saldoAwal2 = calculateSaldoAwalKredit(coaId2, startDate);
             List<Transaction> transactions2 = transactionRepository.findByCoaIdAndTransactionDateBetween(coaId2, startDateTime, endDateTime);
             List<BukuBesarResponse> bukuBesarCoa2 = processTransactionsKredit(transactions2, saldoAwal2);
 
@@ -119,6 +119,36 @@ public class BukuBesarService {
         // Tambahkan semua transaksi ke saldo awal
         for (Transaction transaction : previousTransactions) {
             saldoAwal += transaction.getDebit() - transaction.getKredit();
+        }
+
+        return saldoAwal;
+    }
+
+    private double calculateSaldoAwalKredit(Long coaId, LocalDate startDate) {
+        // Awal bulan dari tanggal filter (startDate)
+        LocalDate startOfMonth = startDate.withDayOfMonth(1);
+
+        // Akhir bulan sebelumnya
+        LocalDate endOfPreviousMonth = startOfMonth.minusDays(1);
+
+        // Ambil saldo awal dari tabel saldo_awal untuk coaId
+        Optional<SaldoAwal> saldoAwalOpt = saldoAwalRepository.findByCoa(coaRepository.findById(coaId).orElseThrow());
+
+        // Jika saldo awal belum diinput, mulai dengan saldo awal 0
+        double saldoAwal = saldoAwalOpt.map(SaldoAwal::getSaldoAwal).orElse(0.0);
+
+        // Ambil semua transaksi hingga akhir bulan sebelum startDate
+        List<Transaction> previousTransactions = transactionRepository.findByCoaIdAndTransactionDateBetween(
+                coaId,
+                saldoAwalOpt.isPresent() ?
+                        saldoAwalOpt.get().getTanggalInput().withDayOfMonth(1).atStartOfDay() :
+                        LocalDate.of(1900, 1, 1).atStartOfDay(), // Jika tidak ada saldo awal, mulai dari tanggal sangat lama
+                endOfPreviousMonth.atTime(23, 59, 59)
+        );
+
+        // Tambahkan semua transaksi ke saldo awal
+        for (Transaction transaction : previousTransactions) {
+            saldoAwal += transaction.getKredit() - transaction.getDebit();
         }
 
         return saldoAwal;

@@ -67,19 +67,18 @@ public class AuthController {
     @PostMapping("/google")
     public ResponseEntity<JwtResponse> loginWithGoogle(@RequestBody GoogleAccessTokenRequest tokenRequest) {
         try {
-            // Ambil access_token dari request body
+            // ✅ Logging untuk cek apakah token masuk ke backend
+            System.out.println("Received Access Token: " + tokenRequest.getAccess_token());
+
             String accessToken = tokenRequest.getAccess_token();
-
-            // Lakukan autentikasi dengan Google OAuth2
             JwtResponse authResponse = authService.authenticateGoogleUser(accessToken);
-
-            // Kembalikan JWT token dan username jika autentikasi sukses
             return ResponseEntity.ok(authResponse);
         } catch (Exception e) {
-            // Jika gagal, kembalikan pesan error dengan status UNAUTHORIZED
+            System.out.println("Google Authentication Error: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new JwtResponse("Unauthorized", null));
         }
     }
+
 
 
     @PostMapping("/reset-password")
