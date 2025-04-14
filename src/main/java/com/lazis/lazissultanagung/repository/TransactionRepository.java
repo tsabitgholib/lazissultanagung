@@ -168,7 +168,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
                                                   @Param("startDate") LocalDateTime startDate,
                                                   @Param("endDate") LocalDateTime endDate);
 
-    int countByZakatId(Long zakatId);
+    int countByZakatIdAndDebitGreaterThan(Long zakatId, int value);
 
 
 

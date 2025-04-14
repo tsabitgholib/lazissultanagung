@@ -106,7 +106,7 @@ public class BillingServiceImpl implements BillingService {
         billing.setBillingAmount(transactionRequest.getTransactionAmount());
         billing.setBillingDate(LocalDateTime.now());
         billing.setCategory(categoryType);
-        billing.setMethod("ONLINE");
+        billing.setMethod(transactionRequest.getMethod());
         billing.setSuccess(false);
 
         // Mendapatkan donatur yang login (jika ada)

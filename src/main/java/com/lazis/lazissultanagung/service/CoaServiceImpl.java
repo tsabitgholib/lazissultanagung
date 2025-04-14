@@ -5,6 +5,7 @@ import com.lazis.lazissultanagung.exception.BadRequestException;
 import com.lazis.lazissultanagung.model.Coa;
 import com.lazis.lazissultanagung.repository.CoaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,13 +19,18 @@ public class CoaServiceImpl implements CoaService{
     public CoaRepository coaRepository;
 
     @Override
-    public List<Coa> getAllCoa(){
-        return coaRepository.findByParentAccountIsNotNull();
+    public List<Coa> getAllParentCoa(){
+        return coaRepository.findByParentAccountIsNull(Sort.by(Sort.Direction.ASC, "accountCode"));
     }
 
     @Override
-    public List<Coa> getAllCoas(){
-        return coaRepository.findAll();
+    public List<Coa> getAllCoa(){
+        return coaRepository.findByParentAccountIsNotNull(Sort.by(Sort.Direction.ASC, "accountCode"));
+    }
+
+    @Override
+    public List<Coa> getAllCoas() {
+        return coaRepository.findAll(Sort.by(Sort.Direction.ASC, "accountCode"));
     }
 
     @Override

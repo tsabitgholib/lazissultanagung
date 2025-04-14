@@ -95,7 +95,7 @@ public class ZakatServiceImpl implements ZakatService {
             dataZakat.put("total_zakat_fitrah", 0);
         }
 
-        int jumlahDonaturZakatFitrah = transactionRepository.countByZakatId(id);
+        int jumlahDonaturZakatFitrah = transactionRepository.countByZakatIdAndDebitGreaterThan(id, 0);
 
         dataZakat.put("jumlah_donatur", jumlahDonaturZakatFitrah);
         dataZakat.put("total_zakat_fitrah", amount);

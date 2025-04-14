@@ -9,4 +9,5 @@ public class TransactionRequest {
     private String email;
     private double transactionAmount;
     private String message;
+    private String method;
 }

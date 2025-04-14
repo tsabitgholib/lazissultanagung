@@ -29,6 +29,11 @@ public class CoaController {
         return coaService.getAllCoas();
     }
 
+    @GetMapping("/parent")
+    public List<Coa> getAllParentCoa(){
+        return coaService.getAllParentCoa();
+    }
+
     @GetMapping("/list")
     public ResponseEntity<List<Coa>> getCoaByAccountType(@RequestParam("accountType") String accountType) {
         try {

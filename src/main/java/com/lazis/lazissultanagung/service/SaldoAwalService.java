@@ -7,6 +7,7 @@ import com.lazis.lazissultanagung.model.SaldoAwal;
 import com.lazis.lazissultanagung.repository.CoaRepository;
 import com.lazis.lazissultanagung.repository.SaldoAwalRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -82,7 +83,7 @@ public class SaldoAwalService {
 
     public List<CoaSaldoResponse> getAllCoaWithSaldoAwal() {
         // Ambil semua COA yang memiliki parentAccount != null
-        List<Coa> coas = coaRepository.findByParentAccountIsNotNull();
+        List<Coa> coas = coaRepository.findByParentAccountIsNotNull(Sort.by(Sort.Direction.ASC, "accountCode"));
 
         // Map COA ke dalam response DTO
         List<CoaSaldoResponse> responses = new ArrayList<>();

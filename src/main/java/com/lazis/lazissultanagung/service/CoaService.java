@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Map;
 
 public interface CoaService {
+    List<Coa> getAllParentCoa();
+
     List<Coa> getAllCoa();
 
     List<Coa> getAllCoas();
