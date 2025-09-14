@@ -130,4 +130,30 @@ public class TransactionController {
         Page<Transaction> transactions = transactionService.searchTransactions(search, pageRequest);
         return ResponseEntity.ok(transactions);
     }
+
+    @PutMapping("/edit-penyaluran")
+    public ResponseEntity<?> editJurnalUmum(@RequestParam String nomorBukti,
+                                            @RequestBody JurnalUmumRequest jurnalUmumRequest) {
+        try {
+            ResponseMessage response = transactionService.updateJurnalUmumPenyaluran(nomorBukti, jurnalUmumRequest);
+            return ResponseEntity.ok(response);
+        } catch (BadRequestException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/get-penyaluran-by-nomor-bukti")
+    public ResponseEntity<?> getPenyaluranByNomorBukti(@RequestParam String nomorBukti) {
+        Map<String, Object> result = transactionService.getJurnalUmumByNomorBukti(nomorBukti);
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/get-all-penyaluran")
+    public ResponseEntity<?> getAllPenyaluran() {
+        List<Map<String, Object>> result = transactionService.getAllPenyaluran();
+        return ResponseEntity.ok(result);
+    }
+
+
+
 }

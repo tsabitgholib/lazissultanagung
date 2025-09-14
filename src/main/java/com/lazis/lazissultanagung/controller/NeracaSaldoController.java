@@ -41,11 +41,11 @@ public class NeracaSaldoController {
         LocalDate endDate = LocalDate.parse(endDateStr);
 
         // Kategori Akun COA
-        Map<String, Object> asetLancar = calculateDetailsByCoaIds(List.of(1L, 23L, 25L, 28L, 30L, 32L), startDate, endDate);
-        Map<String, Object> asetTetap = calculateDetailsByCoaIds(List.of(34L, 36L, 38L), startDate, endDate);
-        Map<String, Object> asetLainLain = calculateDetailsByParentId(40L, startDate, endDate);
-        Map<String, Object> kewajibanLancar = calculateDetailsByParentId(42L, startDate, endDate);
-        Map<String, Object> saldoDanaZis = calculateDetailsByParentId(44L, startDate, endDate);
+        Map<String, Object> asetLancar = calculateDetailsByParentId(List.of(1L, 23L, 25L, 28L, 30L, 32L), startDate, endDate);
+        Map<String, Object> asetTetap = calculateDetailsByParentId(List.of(34L, 36L, 38L), startDate, endDate);
+        Map<String, Object> asetLainLain = calculateDetailsByParentId(List.of(40L), startDate, endDate);
+        Map<String, Object> kewajibanLancar = calculateDetailsByParentId(List.of(42L), startDate, endDate);
+        Map<String, Object> saldoDanaZis = calculateDetailsByParentId(List.of(44L), startDate, endDate);
 
         // Menambahkan kategori ke dalam response
         response.put("Aset Lancar", asetLancar);
@@ -98,8 +98,8 @@ public class NeracaSaldoController {
         return details;
     }
 
-    private Map<String, Object> calculateDetailsByParentId(Long parentId, LocalDate startDate, LocalDate endDate) {
-        List<Coa> coaList = coaRepository.findByParentAccount_Id(parentId);
+    private Map<String, Object> calculateDetailsByParentId(List<Long> parentId, LocalDate startDate, LocalDate endDate) {
+        List<Coa> coaList = coaRepository.findByParentAccount_IdIn(parentId);
         Map<String, Object> details = new LinkedHashMap<>();
         for (Coa coa : coaList) {
             Map<String, Object> accountDetails = calculateAccountDetails(coa.getId(), startDate, endDate);

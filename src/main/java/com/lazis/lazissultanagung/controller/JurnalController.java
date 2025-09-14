@@ -277,7 +277,7 @@ public class JurnalController {
             Coa parentCoa = coaRepository.findById(coaId).orElse(null);
             if (parentCoa != null) {
                 Map<String, Object> parentBreakdown = new LinkedHashMap<>();
-                List<Coa> subAccounts = coaRepository.findByParentAccount_Id(parentCoa.getId());
+                List<Coa> subAccounts = coaRepository.findByParentAccount_IdIn(List.of(parentCoa.getId()));
 
                 // Hitung breakdown untuk setiap sub-akun
                 for (Coa subCoa : subAccounts) {

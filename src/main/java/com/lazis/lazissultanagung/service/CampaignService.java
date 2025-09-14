@@ -52,4 +52,9 @@ public interface CampaignService {
     Page<CampaignResponse> getPendingCampaignsByOperator(Pageable pageable);
 
     Page<CampaignResponse> getHistoryCampaignsByOperator(Pageable pageable);
+
+    List<CampaignResponse> getCampaignByPriority();
+
+    @Transactional
+    CampaignResponse setCampaignPriority(Long campaignId, boolean priority);
 }

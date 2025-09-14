@@ -50,5 +50,28 @@ public class DistributionController {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
     }
+
+    @PutMapping("/edit/{distributionId}")
+    public ResponseEntity<?> updateDistribution(
+            @PathVariable Long distributionId,
+            @ModelAttribute DistributionRequest distributionRequest) {
+        try {
+            Distribution distribution = distributionService.updateDistribution(distributionId, distributionRequest);
+            return ResponseEntity.ok(distribution);
+        } catch (BadRequestException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/{distributionId}")
+    public ResponseEntity<?> getDistributionById(@PathVariable Long distributionId) {
+        try {
+            Distribution distribution = distributionService.getDistributionById(distributionId);
+            return ResponseEntity.ok(distribution);
+        } catch (BadRequestException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
 }
 

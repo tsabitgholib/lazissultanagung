@@ -5,14 +5,16 @@ import com.lazis.lazissultanagung.enumeration.ERole;
 import com.lazis.lazissultanagung.exception.BadRequestException;
 import com.lazis.lazissultanagung.model.Admin;
 import com.lazis.lazissultanagung.model.DashboardImage;
-import com.lazis.lazissultanagung.repository.AdminRepository;
-import com.lazis.lazissultanagung.repository.DashboardImageRepository;
+import com.lazis.lazissultanagung.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,6 +31,18 @@ public class DashboardImageServiceImpl implements DashboardImageService{
 
     @Autowired
     private FileStorageService fileStorageService;
+
+    @Autowired
+    private CampaignRepository campaignRepository;
+
+    @Autowired
+    private ZakatRepository zakatRepository;
+
+    @Autowired
+    private InfakRepository infakRepository;
+
+    @Autowired
+    private DSKLRepository dsklRepository;
 
     @Override
     public List<DashboardImage> getAllDashboardImage() {
@@ -160,6 +174,44 @@ public class DashboardImageServiceImpl implements DashboardImageService{
             return dashboardImageRepository.save(dashboardImage);
         }
         throw new BadRequestException("Admin tidak ditemukan");
+    }
+
+    @Override
+    public List<Map<String, Object>> getAllPenghimpunan() {
+        List<Map<String, Object>> hasil = new ArrayList<>();
+
+        campaignRepository.findAllPenghimpunan().forEach(row -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("name", row[0]);
+            map.put("amount", ((Double) row[1]) % 1 == 0 ? ((Double) row[1]).longValue() : row[1]);
+            hasil.add(map);
+        });
+
+        zakatRepository.findAllPenghimpunan().forEach(row -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("name", row[0]);
+            map.put("amount", ((Double) row[1]) % 1 == 0 ? ((Double) row[1]).longValue() : row[1]);
+
+            hasil.add(map);
+        });
+
+        infakRepository.findAllPenghimpunan().forEach(row -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("name", row[0]);
+            map.put("amount", ((Double) row[1]) % 1 == 0 ? ((Double) row[1]).longValue() : row[1]);
+
+            hasil.add(map);
+        });
+
+        dsklRepository.findAllPenghimpunan().forEach(row -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("name", row[0]);
+            map.put("amount", ((Double) row[1]) % 1 == 0 ? ((Double) row[1]).longValue() : row[1]);
+
+            hasil.add(map);
+        });
+
+        return hasil;
     }
 
 }

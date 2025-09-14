@@ -18,13 +18,11 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
-public class TransactionServiceImpl implements TransactionService{
+public class TransactionServiceImpl implements TransactionService {
 
     @Autowired
     private TransactionRepository transactionRepository;
@@ -406,9 +404,6 @@ public class TransactionServiceImpl implements TransactionService{
     }
 
 
-
-
-
     @Override
     public Page<TransactionResponse> getTransactionsByCampaignId(Long campaignId, Pageable pageable) {
         Page<Transaction> transactions = transactionRepository.findByCampaignId(campaignId, pageable);
@@ -541,14 +536,13 @@ public class TransactionServiceImpl implements TransactionService{
         }
 
         throw new BadRequestException("Authentication error.");
-}
+    }
 
 
     @Override
     public Page<Transaction> searchTransactions(String search, Pageable pageable) {
         return transactionRepository.searchTransactions(search, pageable);
     }
-
 
 
     private Object getCategoryData(Transaction transaction) {
@@ -568,5 +562,319 @@ public class TransactionServiceImpl implements TransactionService{
                 return null;
         }
     }
+
+    @Override
+    public List<Map<String, Object>> getAllDonatur() {
+        List<Object[]> results = transactionRepository.findAllDonaturMinimal();
+
+        return results.stream().map(row -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("username", row[0]);
+            map.put("transactionDate", row[1]);
+            map.put("amount", ((Double) row[2]) % 1 == 0 ? ((Double) row[2]).longValue() : row[2]);
+            return map;
+        }).collect(Collectors.toList());
+    }
+    @Override
+    public ResponseMessage updateJurnalUmumPenyaluran(String nomorBukti, JurnalUmumRequest jurnalUmumRequest) throws BadRequestException {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof UserDetailsImpl) {
+            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+            Admin existingAdmin = adminRepository.findByPhoneNumber(userDetails.getPhoneNumber())
+                    .orElseThrow(() -> new BadRequestException("Admin tidak ditemukan"));
+
+            // Cari semua transaksi dengan nomor bukti
+            List<Transaction> transaksiList = transactionRepository.findByNomorBukti(nomorBukti);
+            if (transaksiList.isEmpty()) {
+                throw new BadRequestException("Transaksi dengan nomor bukti " + nomorBukti + " tidak ditemukan");
+            }
+
+            // ✅ Pastikan request valid dulu
+            if (jurnalUmumRequest.getTransactionDate() == null ||
+                    jurnalUmumRequest.getDescription() == null ||
+                    jurnalUmumRequest.getCategoryType() == null ||
+                    jurnalUmumRequest.getDebitDetails() == null ||
+                    jurnalUmumRequest.getKreditDetails() == null) {
+                throw new BadRequestException("Field transaksi wajib diisi lengkap");
+            }
+
+            // Hitung nominal debit & kredit
+            Double nominalDebet = Optional.ofNullable(jurnalUmumRequest.getDebitDetails())
+                    .orElse(List.of())
+                    .stream()
+                    .mapToDouble(JurnalUmumRequest.DebitDetail::getAmount)
+                    .sum();
+
+            Double nominalKredit = Optional.ofNullable(jurnalUmumRequest.getKreditDetails())
+                    .orElse(List.of())
+                    .stream()
+                    .mapToDouble(JurnalUmumRequest.KreditDetail::getAmount)
+                    .sum();
+
+            if (nominalDebet <= 0 || nominalKredit <= 0) {
+                throw new BadRequestException("Nominal debit dan kredit wajib lebih dari 0");
+            }
+
+            // Validasi COA debit
+            Long coaDebitId = jurnalUmumRequest.getDebitDetails().get(0).getCoaId();
+            Coa coaDebit = coaRepository.findById(coaDebitId)
+                    .orElseThrow(() -> new BadRequestException("COA Debet tidak ditemukan"));
+
+            // Validasi COA kredit
+            for (JurnalUmumRequest.KreditDetail kreditDetail : jurnalUmumRequest.getKreditDetails()) {
+                coaRepository.findById(kreditDetail.getCoaId())
+                        .orElseThrow(() -> new BadRequestException("COA Kredit tidak ditemukan: " + kreditDetail.getCoaId()));
+            }
+
+            // ✅ Semua valid → baru hapus transaksi lama
+            transactionRepository.deleteAll(transaksiList);
+
+            // Flag penyaluran
+            boolean isPenyaluran = jurnalUmumRequest.isPenyaluran();
+
+            // Buat transaksi debit
+            Transaction transactionDebit = new Transaction();
+            transactionDebit.setTransactionDate(jurnalUmumRequest.getTransactionDate().atStartOfDay());
+            transactionDebit.setUsername("Teller Manual");
+            transactionDebit.setMessage(jurnalUmumRequest.getDescription());
+            transactionDebit.setDebit(nominalDebet);
+            transactionDebit.setKredit(0.0);
+            transactionDebit.setCoa(coaDebit);
+            transactionDebit.setNomorBukti(nomorBukti); // tetap pakai nomor bukti lama
+            transactionDebit.setTransactionAmount(nominalDebet);
+            transactionDebit.setMethod("OFFLINE");
+            transactionDebit.setChannel("Teller");
+            transactionDebit.setPenyaluran(isPenyaluran);
+            transactionDebit.setSuccess(true);
+            transactionDebit.setCategory(jurnalUmumRequest.getCategoryType());
+
+            switch (jurnalUmumRequest.getCategoryType().toLowerCase()) {
+                case "campaign":
+                    Campaign campaign = campaignRepository.findById(jurnalUmumRequest.getCategoryId())
+                            .orElseThrow(() -> new BadRequestException("Campaign tidak ditemukan"));
+                    transactionDebit.setCampaign(campaign);
+                    break;
+                case "zakat":
+                    Zakat zakat = zakatRepository.findById(jurnalUmumRequest.getCategoryId())
+                            .orElseThrow(() -> new BadRequestException("Zakat tidak ditemukan"));
+                    transactionDebit.setZakat(zakat);
+                    break;
+                case "infak":
+                    Infak infak = infakRepository.findById(jurnalUmumRequest.getCategoryId())
+                            .orElseThrow(() -> new BadRequestException("Infak tidak ditemukan"));
+                    transactionDebit.setInfak(infak);
+                    break;
+                case "dskl":
+                    DSKL dskl = dsklRepository.findById(jurnalUmumRequest.getCategoryId())
+                            .orElseThrow(() -> new BadRequestException("DSKL tidak ditemukan"));
+                    transactionDebit.setDskl(dskl);
+                    break;
+                case "wakaf":
+                    Wakaf wakaf = wakafRepository.findById(jurnalUmumRequest.getCategoryId())
+                            .orElseThrow(() -> new BadRequestException("Wakaf tidak ditemukan"));
+                    transactionDebit.setWakaf(wakaf);
+                    break;
+                case "pengelola":
+                    break;
+                default:
+                    throw new BadRequestException("Invalid category type: " + jurnalUmumRequest.getCategoryType().toLowerCase()); // Exception handling update
+            }
+
+            transactionRepository.save(transactionDebit);
+
+            // Buat transaksi kredit
+            for (JurnalUmumRequest.KreditDetail kreditDetail : jurnalUmumRequest.getKreditDetails()) {
+                Transaction transactionKredit = new Transaction();
+                transactionKredit.setTransactionDate(jurnalUmumRequest.getTransactionDate().atStartOfDay());
+                transactionKredit.setUsername("Teller Manual");
+                transactionKredit.setMessage(jurnalUmumRequest.getDescription());
+                transactionKredit.setDebit(0.0);
+                transactionKredit.setKredit(kreditDetail.getAmount());
+                transactionKredit.setCoa(coaRepository.findById(kreditDetail.getCoaId())
+                        .orElseThrow(() -> new BadRequestException("COA Kredit tidak ditemukan")));
+                transactionKredit.setNomorBukti(nomorBukti);
+                transactionKredit.setTransactionAmount(nominalDebet);
+                transactionKredit.setMethod("OFFLINE");
+                transactionKredit.setChannel("Teller");
+                transactionKredit.setPenyaluran(isPenyaluran);
+                transactionKredit.setSuccess(true);
+                transactionKredit.setCategory(jurnalUmumRequest.getCategoryType());
+                switch (jurnalUmumRequest.getCategoryType().toLowerCase()) {
+                    case "campaign":
+                        Campaign campaign = campaignRepository.findById(jurnalUmumRequest.getCategoryId())
+                                .orElseThrow(() -> new BadRequestException("Campaign tidak ditemukan"));
+                        transactionKredit.setCampaign(campaign);
+                        break;
+                    case "zakat":
+                        Zakat zakat = zakatRepository.findById(jurnalUmumRequest.getCategoryId())
+                                .orElseThrow(() -> new BadRequestException("Zakat tidak ditemukan"));
+                        transactionKredit.setZakat(zakat);
+                        break;
+                    case "infak":
+                        Infak infak = infakRepository.findById(jurnalUmumRequest.getCategoryId())
+                                .orElseThrow(() -> new BadRequestException("Infak tidak ditemukan"));
+                        transactionKredit.setInfak(infak);
+                        break;
+                    case "dskl":
+                        DSKL dskl = dsklRepository.findById(jurnalUmumRequest.getCategoryId())
+                                .orElseThrow(() -> new BadRequestException("DSKL tidak ditemukan"));
+                        transactionKredit.setDskl(dskl);
+                        break;
+                    case "wakaf":
+                        Wakaf wakaf = wakafRepository.findById(jurnalUmumRequest.getCategoryId())
+                                .orElseThrow(() -> new BadRequestException("Wakaf tidak ditemukan"));
+                        transactionKredit.setWakaf(wakaf);
+                        break;
+                    case "pengelola":
+                        break;
+                    default:
+                        throw new BadRequestException("Invalid category type: " + jurnalUmumRequest.getCategoryType().toLowerCase()); // Exception handling update
+                }
+                transactionRepository.save(transactionKredit);
+            }
+
+            return new ResponseMessage(true, "Jurnal umum dengan nomor bukti " + nomorBukti + " berhasil diperbarui");
+        }
+        throw new BadRequestException("Admin tidak ditemukan");
+    }
+
+
+    @Override
+    public Map<String, Object> getJurnalUmumByNomorBukti(String nomorBukti) throws BadRequestException {
+        List<Transaction> transaksiList = transactionRepository.findByNomorBukti(nomorBukti);
+        if (transaksiList.isEmpty()) {
+            throw new BadRequestException("Transaksi dengan nomor bukti " + nomorBukti + " tidak ditemukan");
+        }
+
+        // Ambil transaksi debit (anggap cuma 1 baris debit utama)
+        Transaction transaksiDebit = transaksiList.stream()
+                .filter(t -> t.getDebit() > 0)
+                .findFirst()
+                .orElseThrow(() -> new BadRequestException("Transaksi debit tidak ditemukan"));
+
+        // Mapping ke request
+        JurnalUmumRequest response = new JurnalUmumRequest();
+        response.setTransactionDate(transaksiDebit.getTransactionDate().toLocalDate());
+        response.setDescription(transaksiDebit.getMessage());
+        response.setCategoryType(transaksiDebit.getCategory());
+        response.setCategoryId(
+                transaksiDebit.getCampaign() != null ? transaksiDebit.getCampaign().getCampaignId() :
+                        transaksiDebit.getZakat()   != null ? transaksiDebit.getZakat().getId() :
+                                transaksiDebit.getInfak()   != null ? transaksiDebit.getInfak().getId() :
+                                        transaksiDebit.getWakaf()   != null ? transaksiDebit.getWakaf().getId() :
+                                                transaksiDebit.getDskl()    != null ? transaksiDebit.getDskl().getId() : null
+        );
+        response.setPenyaluran(transaksiDebit.isPenyaluran());
+
+        // Debit detail
+        JurnalUmumRequest.DebitDetail debitDetail = new JurnalUmumRequest.DebitDetail();
+        debitDetail.setCoaId(transaksiDebit.getCoa().getId());
+        debitDetail.setAmount(transaksiDebit.getDebit());
+        response.setDebitDetails(List.of(debitDetail));
+
+        // Kredit details
+        List<JurnalUmumRequest.KreditDetail> kreditDetails = transaksiList.stream()
+                .filter(t -> t.getKredit() > 0)
+                .map(t -> {
+                    JurnalUmumRequest.KreditDetail kd = new JurnalUmumRequest.KreditDetail();
+                    kd.setCoaId(t.getCoa().getId());
+                    kd.setAmount(t.getKredit());
+                    return kd;
+                })
+                .toList();
+        response.setKreditDetails(kreditDetails);
+
+        // Tambah categoryName biar sama kaya getAllPenyaluran
+        String categoryName =
+                transaksiDebit.getCampaign() != null ? transaksiDebit.getCampaign().getCampaignName() :
+                        transaksiDebit.getZakat()   != null ? transaksiDebit.getZakat().getCategoryName() :
+                                transaksiDebit.getInfak()   != null ? transaksiDebit.getInfak().getCategoryName() :
+                                        transaksiDebit.getWakaf()   != null ? transaksiDebit.getWakaf().getCategoryName() :
+                                                transaksiDebit.getDskl()    != null ? transaksiDebit.getDskl().getCategoryName() : null;
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("nomorBukti", nomorBukti);
+        result.put("categoryName", categoryName);
+        result.put("jurnal", response);
+
+        return result;
+    }
+
+
+    @Override
+    public List<Map<String, Object>> getAllPenyaluran() {
+        List<Transaction> transaksiList = transactionRepository.findByPenyaluranTrueOrderByNomorBuktiDesc();
+
+        // Group by nomorBukti → 1 nomor bukti = 1 JurnalUmumRequest
+        Map<String, List<Transaction>> grouped = transaksiList.stream()
+                .collect(Collectors.groupingBy(Transaction::getNomorBukti,
+                        LinkedHashMap::new, // supaya urut sesuai query
+                        Collectors.toList()));
+
+        List<Map<String, Object>> result = new ArrayList<>();
+
+        for (Map.Entry<String, List<Transaction>> entry : grouped.entrySet()) {
+            String nomorBukti = entry.getKey();
+            List<Transaction> group = entry.getValue();
+
+            Transaction debitTx = group.stream()
+                    .filter(t -> t.getDebit() > 0)
+                    .findFirst()
+                    .orElse(null);
+
+            if (debitTx == null) continue;
+
+            JurnalUmumRequest response = new JurnalUmumRequest();
+            response.setTransactionDate(debitTx.getTransactionDate().toLocalDate());
+            response.setDescription(debitTx.getMessage());
+            response.setCategoryType(debitTx.getCategory());
+            response.setCategoryId(
+                    debitTx.getCampaign() != null ? debitTx.getCampaign().getCampaignId() :
+                            debitTx.getZakat()   != null ? debitTx.getZakat().getId() :
+                                    debitTx.getInfak()   != null ? debitTx.getInfak().getId() :
+                                            debitTx.getWakaf()   != null ? debitTx.getWakaf().getId() :
+                                                    debitTx.getDskl()    != null ? debitTx.getDskl().getId() : null
+            );
+            response.setPenyaluran(true);
+
+            // debit
+            JurnalUmumRequest.DebitDetail debitDetail = new JurnalUmumRequest.DebitDetail();
+            debitDetail.setCoaId(debitTx.getCoa().getId());
+            debitDetail.setAmount(debitTx.getDebit());
+            response.setDebitDetails(List.of(debitDetail));
+
+            // kredit
+            List<JurnalUmumRequest.KreditDetail> kreditDetails = group.stream()
+                    .filter(t -> t.getKredit() > 0)
+                    .map(t -> {
+                        JurnalUmumRequest.KreditDetail kd = new JurnalUmumRequest.KreditDetail();
+                        kd.setCoaId(t.getCoa().getId());
+                        kd.setAmount(t.getKredit());
+                        return kd;
+                    })
+                    .toList();
+            response.setKreditDetails(kreditDetails);
+
+            // category name
+            String categoryName =
+                    debitTx.getCampaign() != null ? debitTx.getCampaign().getCampaignName() :
+                            debitTx.getZakat()   != null ? debitTx.getZakat().getCategoryName() :
+                                    debitTx.getInfak()   != null ? debitTx.getInfak().getCategoryName() :
+                                            debitTx.getWakaf()   != null ? debitTx.getWakaf().getCategoryName() :
+                                                    debitTx.getDskl()    != null ? debitTx.getDskl().getCategoryName() : null;
+
+            // Bungkus response
+            Map<String, Object> mapResponse = new LinkedHashMap<>();
+            mapResponse.put("nomorBukti", nomorBukti);
+            mapResponse.put("categoryName", categoryName);
+            mapResponse.put("jurnal", response);
+
+
+            result.add(mapResponse);
+        }
+
+        return result;
+    }
+
 
 }

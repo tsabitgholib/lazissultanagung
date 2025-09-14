@@ -10,6 +10,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface DSKLRepository extends JpaRepository<DSKL, Long> {
     @Transactional
@@ -27,4 +29,6 @@ public interface DSKLRepository extends JpaRepository<DSKL, Long> {
     @Query("SELECT COALESCE(SUM(d.amount), 0.0) FROM DSKL d")
     double getTotalDsklAmount();
 
+    @Query("SELECT d.categoryName, d.amount FROM DSKL d")
+    List<Object[]> findAllPenghimpunan();
 }

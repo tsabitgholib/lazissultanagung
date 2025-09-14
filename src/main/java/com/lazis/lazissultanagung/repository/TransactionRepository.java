@@ -58,8 +58,14 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
             "FROM Transaction t WHERE t.penyaluran = false")
     Double totalTransactionAmount();
 
-    @Query("SELECT COALESCE(count(t.phoneNumber), 0.0) FROM Transaction t where t.debit != 0 AND t.penyaluran = false")
+    @Query("""
+       SELECT COUNT(DISTINCT t.transactionId) 
+       FROM Transaction t 
+       WHERE t.penyaluran = false 
+         AND t.debit != 0
+       """)
     long getTotalDonatur();
+
 
     @Query("SELECT MAX(t.transactionId) FROM Transaction t")
     Integer findLastTransactionNumber();
@@ -170,6 +176,11 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 
     int countByZakatIdAndDebitGreaterThan(Long zakatId, int value);
 
+    @Query("SELECT t.username, t.transactionDate, t.debit FROM Transaction t where t.debit != 0 AND t.penyaluran = false ORDER BY t.transactionDate DESC")
+    List<Object[]> findAllDonaturMinimal();
 
+
+    List<Transaction> findByNomorBukti(String nomorBukti);
+    List<Transaction> findByPenyaluranTrueOrderByNomorBuktiDesc();
 
 }

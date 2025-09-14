@@ -62,4 +62,8 @@ public interface DistributionRepository extends JpaRepository<Distribution, Long
 
     @Query("SELECT COALESCE(COUNT(DISTINCT d.receiver), 0.0) AS penerima_manfaat FROM Distribution d where d.dskl is not null")
     long totalDistributionDSKLReceiver();
+
+
+    @Query("SELECT d.receiver, d.distributionDate, d.image FROM Distribution d ORDER BY d.distributionDate DESC")
+    List<Object[]> findAllReceiversAndDateAndImage();
 }

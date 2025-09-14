@@ -15,6 +15,9 @@ public class CampaignRequest {
     private String campaignName;
     private String campaignCode;
     private MultipartFile campaignImage;
+    private MultipartFile campaignImageDesc1;
+    private MultipartFile campaignImageDesc2;
+    private MultipartFile campaignImageDesc3;
     private String description;
     private String location;
     private double targetAmount;
@@ -26,4 +29,5 @@ public class CampaignRequest {
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate endDate;
     private boolean emergency;
+    private boolean priority;
 }

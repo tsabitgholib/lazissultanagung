@@ -5,6 +5,7 @@ import com.lazis.lazissultanagung.dto.response.AmilZiswafResponse;
 import com.lazis.lazissultanagung.dto.response.SummaryResponse;
 import com.lazis.lazissultanagung.exception.BadRequestException;
 import com.lazis.lazissultanagung.model.Admin;
+import com.lazis.lazissultanagung.model.PenerimaManfaat;
 import com.lazis.lazissultanagung.model.PercentageForCampaign;
 import com.lazis.lazissultanagung.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,10 +16,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 public class SummaryServiceImpl implements SummaryService {
@@ -56,11 +54,19 @@ public class SummaryServiceImpl implements SummaryService {
     @Autowired
     private PercentageForCampaignService percentageForCampaignService;
 
+    @Autowired
+    private PenerimaManfaatService penerimaManfaatService;
+
     @Override
     public SummaryResponse getSummary() {
+
+        Optional<PenerimaManfaat> penerimaOpt = penerimaManfaatService.getByIdOne();
+        long jumlah = penerimaOpt.map(p -> (long) p.getJumlahPenerimaManfaat())
+                .orElse(0L);
+
         SummaryResponse summary = new SummaryResponse();
             summary.setTotalDistributionAmount(distributionRepository.totalDistributionAmount());
-            summary.setTotalDistributionReceiver(distributionRepository.totalDistributionReceiver());
+            summary.setTotalDistributionReceiver(jumlah);
             summary.setTotalTransactionAmount(transactionRepository.totalTransactionAmount());
             summary.setTotalDonatur(transactionRepository.getTotalDonatur());
         return summary;
@@ -98,7 +104,6 @@ public class SummaryServiceImpl implements SummaryService {
         List<Object> response = new ArrayList<>();
         Page<Object> resultPage;
 
-        // Gunakan array untuk menyimpan total
         double[] totals = {0.0, 0.0}; // index 0: totalAmount, index 1: totalAmil
 
         switch (category.toLowerCase()) {
@@ -252,30 +257,46 @@ public class SummaryServiceImpl implements SummaryService {
     public SummaryResponse getSummaryByCategory(String category) {
         SummaryResponse summary = new SummaryResponse();
 
+        Optional<PenerimaManfaat> penerimaZakatOpt = penerimaManfaatService.getByIdOne();
+        long penerimaZakat = penerimaZakatOpt.map(p -> (long) p.getPenerimaManfaatZakat())
+                .orElse(0L);
+
+        Optional<PenerimaManfaat> penerimaInfakOpt = penerimaManfaatService.getByIdOne();
+        long penerimaInfak = penerimaInfakOpt.map(p -> (long) p.getPenerimaManfaatInfak())
+                .orElse(0L);
+
+        Optional<PenerimaManfaat> penerimaWakafOpt = penerimaManfaatService.getByIdOne();
+        long penerimaWakaf = penerimaWakafOpt.map(p -> (long) p.getPenerimaManfaatWakaf())
+                .orElse(0L);
+
+        Optional<PenerimaManfaat> penerimaDSKLOpt = penerimaManfaatService.getByIdOne();
+        long penerimaDSKL = penerimaDSKLOpt.map(p -> (long) p.getPenerimaManfaatDSKL())
+                .orElse(0L);
+
         switch (category.toLowerCase()) {
             case "zakat":
                 summary.setTotalTransactionAmount(transactionRepository.totalTransactionZakatAmount());
                 summary.setTotalDonatur(transactionRepository.getTotalDonaturZakat());
                 summary.setTotalDistributionAmount(distributionRepository.totalDistributionZakatAmount());
-                summary.setTotalDistributionReceiver(distributionRepository.totalDistributionZakatReceiver());
+                summary.setTotalDistributionReceiver(penerimaZakat);
                 break;
             case "infak":
                 summary.setTotalTransactionAmount(transactionRepository.totalTransactionInfakAmount());
                 summary.setTotalDonatur(transactionRepository.getTotalDonaturInfak());
                 summary.setTotalDistributionAmount(distributionRepository.totalDistributionInfakAmount());
-                summary.setTotalDistributionReceiver(distributionRepository.totalDistributionInfakReceiver());
+                summary.setTotalDistributionReceiver(penerimaInfak);
                 break;
             case "wakaf":
                 summary.setTotalTransactionAmount(transactionRepository.totalTransactionWakafAmount());
                 summary.setTotalDonatur(transactionRepository.getTotalDonaturWakaf());
                 summary.setTotalDistributionAmount(distributionRepository.totalDistributionWakafAmount());
-                summary.setTotalDistributionReceiver(distributionRepository.totalDistributionWakafReceiver());
+                summary.setTotalDistributionReceiver(penerimaWakaf);
                 break;
             case "dskl":
                 summary.setTotalTransactionAmount(transactionRepository.totalTransactionDSKLAmount());
                 summary.setTotalDonatur(transactionRepository.getTotalDonaturDSKL());
                 summary.setTotalDistributionAmount(distributionRepository.totalDistributionDSKLAmount());
-                summary.setTotalDistributionReceiver(distributionRepository.totalDistributionDSKLReceiver());
+                summary.setTotalDistributionReceiver(penerimaDSKL);
                 break;
             default:
                 throw new IllegalArgumentException("Invalid category: " + category);

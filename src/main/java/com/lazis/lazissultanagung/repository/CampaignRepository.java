@@ -112,4 +112,10 @@ public interface CampaignRepository extends JpaRepository<Campaign, Long> {
     @Query("SELECT COALESCE(SUM(c.currentAmount), 0.0) FROM Campaign c")
     double getTotalCurrentAmount();
 
+    @Query("SELECT c FROM Campaign c WHERE c.active = true AND c.approved = true AND c.priority = true ORDER BY c.campaignId DESC")
+    List<Campaign> findCampaignByPriority();
+
+    @Query("SELECT c.campaignName, c.currentAmount FROM Campaign c where c.approved = true")
+    List<Object[]> findAllPenghimpunan();
+
 }

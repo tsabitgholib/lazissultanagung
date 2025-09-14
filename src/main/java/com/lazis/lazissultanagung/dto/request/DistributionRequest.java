@@ -8,7 +8,7 @@ import java.time.LocalDate;
 
 @Data
 public class DistributionRequest {
-    private double distributionAmount;
+    private Double distributionAmount;
 
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate distributionDate;

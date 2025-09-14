@@ -32,7 +32,7 @@ public interface CoaRepository extends JpaRepository<Coa, Long> {
 
     List<Coa> findByParentAccountIsNull(Sort sort);
 
-    List<Coa> findByParentAccount_Id(Long parentId);
+    List<Coa> findByParentAccount_IdIn(List<Long> parentId);
 
     @Query("SELECT c FROM Coa c WHERE c.parentAccount.id = :parentAccountId order by accountCode ASC")
     List<Coa> findByParentAccountId(@Param("parentAccountId") Long parentAccountId);

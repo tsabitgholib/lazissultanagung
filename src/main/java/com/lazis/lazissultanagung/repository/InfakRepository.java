@@ -10,6 +10,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface InfakRepository extends JpaRepository<Infak, Long> {
     @Transactional
@@ -27,5 +29,7 @@ public interface InfakRepository extends JpaRepository<Infak, Long> {
     @Query("SELECT COALESCE(SUM(i.amount), 0.0) FROM Infak i")
     double getTotalInfakAmount();
 
+    @Query("SELECT i.categoryName, i.amount FROM Infak i")
+    List<Object[]> findAllPenghimpunan();
 
 }

@@ -69,12 +69,27 @@ public class CampaignServiceImpl implements CampaignService {
             if (campaignRequest.getCampaignImage() != null && !campaignRequest.getCampaignImage().isEmpty()) {
                 imageUrl = fileStorageService.saveFile(campaignRequest.getCampaignImage());
             }
+            String imagedesc1Url = null;
+            if (campaignRequest.getCampaignImageDesc1() != null && !campaignRequest.getCampaignImageDesc1().isEmpty()) {
+                imagedesc1Url = fileStorageService.saveFile(campaignRequest.getCampaignImageDesc1());
+            }
+            String imagedesc2Url = null;
+            if (campaignRequest.getCampaignImageDesc2() != null && !campaignRequest.getCampaignImageDesc2().isEmpty()) {
+                imagedesc2Url = fileStorageService.saveFile(campaignRequest.getCampaignImageDesc2());
+            }
+            String imagedesc3Url = null;
+            if (campaignRequest.getCampaignImageDesc3() != null && !campaignRequest.getCampaignImageDesc3().isEmpty()) {
+                imagedesc3Url = fileStorageService.saveFile(campaignRequest.getCampaignImageDesc3());
+            }
 
             Campaign campaign = new Campaign();
             campaign.setCampaignCategory(campaignCategory);
             campaign.setCampaignName(campaignRequest.getCampaignName());
             campaign.setCampaignCode(campaignRequest.getCampaignCode());
             campaign.setCampaignImage(imageUrl);
+            campaign.setCampaignImageDesc1(imagedesc1Url);
+            campaign.setCampaignImageDesc2(imagedesc2Url);
+            campaign.setCampaignImageDesc3(imagedesc3Url);
             campaign.setDescription(campaignRequest.getDescription());
             campaign.setLocation(campaignRequest.getLocation());
             campaign.setTargetAmount(campaignRequest.getTargetAmount());
@@ -134,11 +149,28 @@ public class CampaignServiceImpl implements CampaignService {
                 imageUrl = fileStorageService.saveFile(campaignRequest.getCampaignImage());
             }
 
+            String imagedesc1Url = null;
+            if (campaignRequest.getCampaignImageDesc1() != null && !campaignRequest.getCampaignImageDesc1().isEmpty()) {
+                imagedesc1Url = fileStorageService.saveFile(campaignRequest.getCampaignImageDesc1());
+            }
+            String imagedesc2Url = null;
+            if (campaignRequest.getCampaignImageDesc2() != null && !campaignRequest.getCampaignImageDesc2().isEmpty()) {
+                imagedesc2Url = fileStorageService.saveFile(campaignRequest.getCampaignImageDesc2());
+            }
+            String imagedesc3Url = null;
+            if (campaignRequest.getCampaignImageDesc3() != null && !campaignRequest.getCampaignImageDesc3().isEmpty()) {
+                imagedesc3Url = fileStorageService.saveFile(campaignRequest.getCampaignImageDesc3());
+            }
+
+
             // Mengupdate field campaign yang diperbolehkan
             existingCampaign.setCampaignCategory(campaignCategory);
             existingCampaign.setCampaignName(campaignRequest.getCampaignName());
             existingCampaign.setCampaignCode(campaignRequest.getCampaignCode());
             existingCampaign.setCampaignImage(imageUrl);
+            existingCampaign.setCampaignImageDesc1(imagedesc1Url);
+            existingCampaign.setCampaignImageDesc2(imagedesc2Url);
+            existingCampaign.setCampaignImageDesc3(imagedesc3Url);
             existingCampaign.setDescription(campaignRequest.getDescription());
             existingCampaign.setLocation(campaignRequest.getLocation());
             existingCampaign.setTargetAmount(campaignRequest.getTargetAmount());
@@ -538,4 +570,41 @@ public class CampaignServiceImpl implements CampaignService {
             throw new BadRequestException("Operator tidak terautentikasi");
         }
     }
+
+    @Override
+    public List<CampaignResponse> getCampaignByPriority() {
+        List<Campaign> campaigns = campaignRepository.findCampaignByPriority();
+
+        return campaigns.stream().map(campaign -> {
+            CampaignResponse response = modelMapper.map(campaign, CampaignResponse.class);
+            // response.setDisplayId(counter.getAndIncrement());
+            response.setCampaignCategory(campaign.getCampaignCategory().getCampaignCategory());
+            response.setCreator(campaign.getAdmin().getUsername());
+            response.setCampaignImage("https://skyconnect.lazis-sa.org/api/images/" + campaign.getCampaignImage());
+
+            return response;
+        }).collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public CampaignResponse setCampaignPriority(Long campaignId, boolean priority) {
+        Campaign campaign = campaignRepository.findById(campaignId)
+                .orElseThrow(() -> new RuntimeException("Campaign tidak ditemukan"));
+
+        campaign.setPriority(priority); // update priority
+        campaignRepository.save(campaign);
+
+        // Mapping ke response
+        CampaignResponse response = modelMapper.map(campaign, CampaignResponse.class);
+        response.setCampaignCategory(campaign.getCampaignCategory().getCampaignCategory());
+        response.setCreator(campaign.getAdmin().getUsername());
+        response.setCampaignImage("https://skyconnect.lazis-sa.org/api/images/" + campaign.getCampaignImage());
+
+        return response;
+    }
+
+
+
+
 }

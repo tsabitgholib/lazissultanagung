@@ -10,6 +10,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface ZakatRepository extends JpaRepository<Zakat, Long> {
 
@@ -27,5 +29,8 @@ public interface ZakatRepository extends JpaRepository<Zakat, Long> {
 
     @Query("SELECT COALESCE(SUM(z.amount), 0.0) FROM Zakat z")
     double getTotalZakatAmount();
+
+    @Query("SELECT z.categoryName, z.amount FROM Zakat z")
+    List<Object[]> findAllPenghimpunan();
 
 }

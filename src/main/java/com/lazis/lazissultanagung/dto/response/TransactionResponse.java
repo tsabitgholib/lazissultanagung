@@ -36,6 +36,15 @@ public class TransactionResponse {
         this.channel = transaction.getChannel();
         this.success = transaction.isSuccess();
         this.categoryData = categoryData;
+
+        if ("Teller Manual".equalsIgnoreCase(transaction.getUsername())) {
+            this.username = transaction.getMessage();
+            this.message = transaction.getUsername();
+        } else {
+            this.username = transaction.getUsername();
+            this.message = transaction.getMessage();
+        }
     }
+
 }
 

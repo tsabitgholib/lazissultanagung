@@ -25,4 +25,6 @@ public interface DonaturRepository extends JpaRepository<Donatur, Long> {
             "LOWER(d.phoneNumber) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
             "LOWER(d.email) LIKE LOWER(CONCAT('%', :search, '%'))")
     Page<Donatur> search(@Param("search") String search, Pageable pageable);
+
+
 }

@@ -10,11 +10,15 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class DistributionServiceImpl implements DistributionService{
@@ -128,7 +132,7 @@ public class DistributionServiceImpl implements DistributionService{
             if (distributionRequest.getImage() != null && !distributionRequest.getImage().isEmpty()) {
                 imageUrl = fileStorageService.saveFile(distributionRequest.getImage());
             }
-            distribution.setImage(imageUrl);
+            distribution.setImage("https://skyconnect.lazis-sa.org/api/images/" + imageUrl);
             distribution.setCategory(categoryType);
             distribution.setSuccess(true);
 
@@ -174,4 +178,123 @@ public class DistributionServiceImpl implements DistributionService{
                 return null;
         }
     }
+
+    @Override
+    public List<Map<String, Object>> getAllPenerimaManfaat() {
+        List<Object[]> results = distributionRepository.findAllReceiversAndDateAndImage();
+
+        return results.stream().map(row -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("receiver", row[0]);
+            map.put("distributionDate", row[1]);
+            map.put("image", row[2]);
+            return map;
+        }).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Map<String, Object>> getAllDistributionswkwk() {
+        List<Distribution> distributions = distributionRepository
+                .findAll(Sort.by(Sort.Direction.DESC, "distributionDate"));
+
+        return distributions.stream().map(d -> {
+            Map<String, Object> map = new HashMap<>();
+            if (d.getCampaign() != null) {
+                map.put("name", d.getCampaign().getCampaignName());
+            } else if (d.getZakat() != null) {
+                map.put("name", d.getZakat().getCategoryName());
+            } else if (d.getInfak() != null) {
+                map.put("name", d.getInfak().getCategoryName());
+            } else if (d.getDskl() != null) {
+                map.put("name", d.getDskl().getCategoryName());
+            } else if (d.getWakaf() != null) {
+                map.put("name", d.getWakaf().getCategoryName());
+            } else {
+                map.put("name", null);
+            }
+            map.put("distributionDate", d.getDistributionDate());
+            map.put("amount", (long) d.getDistributionAmount());
+            map.put("description", d.getDescription());
+            map.put("image", d.getImage());
+
+
+
+            return map;
+        }).collect(Collectors.toList());
+    }
+
+    @Override
+    public Distribution updateDistribution(Long distributionId, DistributionRequest distributionRequest) throws BadRequestException {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof UserDetailsImpl) {
+            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+            Admin existingAdmin = adminRepository.findByPhoneNumber(userDetails.getPhoneNumber())
+                    .orElseThrow(() -> new BadRequestException("Admin not found"));
+
+            if (!existingAdmin.getRole().equals(ERole.ADMIN) && !existingAdmin.getRole().equals(ERole.OPERATOR)) {
+                throw new BadRequestException("Only ADMIN and Operator can edit Distribution");
+            }
+
+            // Ambil distribusi lama
+            Distribution existingDistribution = distributionRepository.findById(distributionId)
+                    .orElseThrow(() -> new BadRequestException("Distribution tidak ditemukan"));
+
+            double oldAmount = existingDistribution.getDistributionAmount();
+
+            // Update deskripsi (kalau ada)
+            if (distributionRequest.getDescription() != null) {
+                existingDistribution.setDescription(distributionRequest.getDescription());
+            }
+
+            if (distributionRequest.getReceiver() != null){
+                existingDistribution.setReceiver(distributionRequest.getReceiver());
+            }
+
+            // Update nominal (kalau ada di request)
+            if (distributionRequest.getDistributionAmount() != null) {
+                double newAmount = distributionRequest.getDistributionAmount();
+
+                if (Double.compare(newAmount, oldAmount) != 0) {
+                    double selisih = newAmount - oldAmount;
+                    existingDistribution.setDistributionAmount(newAmount);
+
+                    // update kategori sesuai selisih
+                    switch (existingDistribution.getCategory()) {
+                        case "campaign":
+                            campaignRepository.updateCampaignDistribution(existingDistribution.getCampaign().getCampaignId(), selisih);
+                            break;
+                        case "zakat":
+                            zakatRepository.updateZakatDistribution(existingDistribution.getZakat().getId(), selisih);
+                            break;
+                        case "infak":
+                            infakRepository.updateInfakDistribution(existingDistribution.getInfak().getId(), selisih);
+                            break;
+                        case "dskl":
+                            dsklRepository.updateDSKLDistribution(existingDistribution.getDskl().getId(), selisih);
+                            break;
+                        case "wakaf":
+                            wakafRepository.updateWakafDistribution(existingDistribution.getWakaf().getId(), selisih);
+                            break;
+                    }
+                }
+            }
+
+            if (distributionRequest.getImage() != null && !distributionRequest.getImage().isEmpty()) {
+                String imageUrl = fileStorageService.saveFile(distributionRequest.getImage());
+                existingDistribution.setImage("https://skyconnect.lazis-sa.org/api/images/" + imageUrl);
+            }
+
+
+            return distributionRepository.save(existingDistribution);
+        }
+        throw new BadRequestException("Authentication failed");
+    }
+
+    @Override
+    public Distribution getDistributionById(Long distributionId) throws BadRequestException {
+        return distributionRepository.findById(distributionId)
+                .orElseThrow(() -> new BadRequestException("Distribution tidak ditemukan"));
+    }
+
+
 }

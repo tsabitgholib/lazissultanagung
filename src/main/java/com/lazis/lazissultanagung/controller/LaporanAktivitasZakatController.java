@@ -126,7 +126,7 @@ public class LaporanAktivitasZakatController {
     // Helper method to get details of COA with transactions
     private Map<String, Object> getCoaDetailsWithTransactions(Long coaId, int month1, int year1, int month2, int year2) {
         Map<String, Object> details = new LinkedHashMap<>();
-        List<Coa> childCoas = coaRepository.findByParentAccount_Id(coaId);
+        List<Coa> childCoas = coaRepository.findByParentAccount_IdIn(List.of(coaId));
 
         double month1Total = 0.0;
         double month2Total = 0.0;

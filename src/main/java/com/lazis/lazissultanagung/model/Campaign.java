@@ -28,6 +28,12 @@ public class Campaign {
 
     private String campaignImage;
 
+    private String campaignImageDesc1;
+
+    private String campaignImageDesc2;
+
+    private String campaignImageDesc3;
+
     @Column(columnDefinition = "TEXT")
     private String description;
 
@@ -59,5 +65,8 @@ public class Campaign {
 
     @Column(columnDefinition = "BOOLEAN")
     private boolean emergency;
+
+    @Column(columnDefinition = "BOOLEAN")
+    private Boolean priority;
 }
 

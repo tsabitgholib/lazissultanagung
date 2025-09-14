@@ -13,6 +13,9 @@ public class CampaignResponse{
     private String campaignName;
     private String campaignCategory;
     private String campaignImage;
+    private String campaignImageDesc1;
+    private String campaignImageDesc2;
+    private String campaignImageDesc3;
     private String creator;
     private String description;
     @JsonFormat(pattern = "yyyy-MM-dd")
@@ -28,4 +31,5 @@ public class CampaignResponse{
     private double distribution;
     private boolean approved;
     private boolean emergency;
+    private boolean priority;
 }

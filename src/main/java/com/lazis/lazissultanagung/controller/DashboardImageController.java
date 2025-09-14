@@ -3,11 +3,17 @@ package com.lazis.lazissultanagung.controller;
 import com.lazis.lazissultanagung.dto.request.DashboardImageRequest;
 import com.lazis.lazissultanagung.model.DashboardImage;
 import com.lazis.lazissultanagung.service.DashboardImageService;
+import com.lazis.lazissultanagung.service.DistributionService;
+import com.lazis.lazissultanagung.service.DonaturService;
+import com.lazis.lazissultanagung.service.TransactionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @CrossOrigin(origins= {"*"}, maxAge = 4800, allowCredentials = "false" )
 @RestController
@@ -16,6 +22,15 @@ public class DashboardImageController {
 
     @Autowired
     private DashboardImageService dashboardImageService;
+
+    @Autowired
+    private DonaturService donaturService;
+
+    @Autowired
+    private TransactionService transactionService;
+
+    @Autowired
+    private DistributionService distributionService;
 
 //    @GetMapping
 //    public ResponseEntity<List<DashboardImage>> getAllImage() {
@@ -49,5 +64,28 @@ public class DashboardImageController {
         DashboardImage updatedDashboardImage = dashboardImageService.deleteDashboardImage(id, images);
         return ResponseEntity.ok(updatedDashboardImage);
     }
+
+    @GetMapping("detail-summary")
+    public ResponseEntity<?> getDashboardData(@RequestParam String type) {
+        switch (type.toLowerCase()) {
+            case "penyaluran":
+                return ResponseEntity.ok(distributionService.getAllDistributionswkwk());
+
+            case "penerima-manfaat":
+                return ResponseEntity.ok(distributionService.getAllPenerimaManfaat());
+
+            case "penghimpunan":
+                return ResponseEntity.ok(dashboardImageService.getAllPenghimpunan());
+
+            case "donatur":
+                return ResponseEntity.ok(transactionService.getAllDonatur());
+
+            default:
+                return ResponseEntity.badRequest().body(
+                        Map.of("error", "Invalid type")
+                );
+        }
+    }
+
 
 }

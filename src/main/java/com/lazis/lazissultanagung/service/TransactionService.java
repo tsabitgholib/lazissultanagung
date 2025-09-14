@@ -37,4 +37,12 @@ public interface TransactionService {
     Map<String, Double> getTransactionSummaryForDonatur(Authentication authentication);
 
     Page<Transaction> searchTransactions(String search, Pageable pageable);
+
+    List<Map<String, Object>> getAllDonatur();
+
+    ResponseMessage updateJurnalUmumPenyaluran(String nomorBukti, JurnalUmumRequest jurnalUmumRequest) throws BadRequestException;
+
+    Map<String, Object> getJurnalUmumByNomorBukti(String nomorBukti) throws BadRequestException;
+
+    List<Map<String, Object>> getAllPenyaluran();
 }

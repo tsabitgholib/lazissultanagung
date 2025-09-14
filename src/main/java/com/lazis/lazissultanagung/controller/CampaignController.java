@@ -168,4 +168,19 @@ public class CampaignController {
         PageRequest pageRequest = PageRequest.of(page, pageSize);
         return campaignService.getHistoryCampaignsByOperator(pageRequest);
     }
+
+    @GetMapping("/get-by-priority")
+    public List<CampaignResponse> getCampaignPriority(){
+        return campaignService.getCampaignByPriority();
+    }
+
+    @PutMapping("/set-priority/{id}")
+    public ResponseEntity<CampaignResponse> setPriority(
+            @PathVariable Long id,
+            @RequestParam boolean priority) {
+
+        CampaignResponse response = campaignService.setCampaignPriority(id, priority);
+        return ResponseEntity.ok(response);
+    }
+
 }
