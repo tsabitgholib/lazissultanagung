@@ -9,10 +9,7 @@ import com.lazis.lazissultanagung.dto.response.ResponseMessage;
 import com.lazis.lazissultanagung.model.Admin;
 import com.lazis.lazissultanagung.model.Donatur;
 import com.lazis.lazissultanagung.service.AuthService;
-
-import com.lazis.lazissultanagung.service.DonaturService;
 import com.lazis.lazissultanagung.service.EmailSenderService;
-import com.lazis.lazissultanagung.service.UserDetailsImpl;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -20,7 +17,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import java.util.Map;
 
 @CrossOrigin(origins= {"*"}, maxAge = 4800, allowCredentials = "false" )
 @RestController

@@ -3,21 +3,16 @@ package com.lazis.lazissultanagung.controller;
 import com.lazis.lazissultanagung.dto.request.CampaignRequest;
 import com.lazis.lazissultanagung.dto.response.CampaignResponse;
 import com.lazis.lazissultanagung.dto.response.ResponseMessage;
-import com.lazis.lazissultanagung.model.Campaign;
 import com.lazis.lazissultanagung.service.CampaignService;
-import org.apache.coyote.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.format.annotation.DateTimeFormat;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.Valid;
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 

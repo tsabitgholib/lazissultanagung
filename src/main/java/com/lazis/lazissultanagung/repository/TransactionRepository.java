@@ -183,4 +183,19 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     List<Transaction> findByNomorBukti(String nomorBukti);
     List<Transaction> findByPenyaluranTrueOrderByNomorBuktiDesc();
 
+    @Query("""
+SELECT SUM(
+    CASE WHEN t.debit > 0 THEN t.debit ELSE 0 END +
+    CASE WHEN t.kredit > 0 THEN t.kredit ELSE 0 END
+)
+FROM Transaction t
+WHERE t.coa.id IN :coaIds
+AND t.transactionDate BETWEEN :startDate AND :endDate
+""")
+Double sumByCoaIdsAndDateRange(
+        @Param("coaIds") List<Long> coaIds,
+        @Param("startDate") LocalDateTime startDate,
+        @Param("endDate") LocalDateTime endDate
+);
+
 }

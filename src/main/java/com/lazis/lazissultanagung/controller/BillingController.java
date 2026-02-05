@@ -1,7 +1,6 @@
 package com.lazis.lazissultanagung.controller;
 
 import com.lazis.lazissultanagung.dto.request.TransactionRequest;
-import com.lazis.lazissultanagung.exception.BadRequestException;
 import com.lazis.lazissultanagung.model.Billing;
 import com.lazis.lazissultanagung.service.BillingService;
 import org.springframework.beans.factory.annotation.Autowired;

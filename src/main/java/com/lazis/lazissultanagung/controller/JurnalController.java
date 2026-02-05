@@ -1,16 +1,12 @@
 package com.lazis.lazissultanagung.controller;
 
-import com.lazis.lazissultanagung.dto.response.JurnalResponse;
 import com.lazis.lazissultanagung.dto.response.JurnalResponseWrapper;
-import com.lazis.lazissultanagung.dto.response.LaporanAktivitasWithTotalResponse;
 import com.lazis.lazissultanagung.model.Coa;
 import com.lazis.lazissultanagung.repository.CoaRepository;
 import com.lazis.lazissultanagung.repository.SaldoAwalRepository;
 import com.lazis.lazissultanagung.repository.TransactionRepository;
 import com.lazis.lazissultanagung.service.JurnalService;
-import com.lazis.lazissultanagung.service.TransactionService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -91,8 +87,8 @@ public class JurnalController {
             @RequestParam("year2") int year2,
             @RequestParam("level") String level // Parameter level ditambahkan
     ) {
-        LocalDateTime startDate = LocalDateTime.of(LocalDate.of(year1, month1, 1), LocalTime.MIN);
-        LocalDateTime endDate = LocalDateTime.of(LocalDate.of(year2, month2, 1).withDayOfMonth(1).plusMonths(1).minusDays(1), LocalTime.MAX);
+        // LocalDateTime startDate = LocalDateTime.of(LocalDate.of(year1, month1, 1), LocalTime.MIN);
+        // LocalDateTime endDate = LocalDateTime.of(LocalDate.of(year2, month2, 1).withDayOfMonth(1).plusMonths(1).minusDays(1), LocalTime.MAX);
 
         Map<String, Object> response = new LinkedHashMap<>();
 
@@ -279,12 +275,10 @@ public class JurnalController {
                 Map<String, Object> parentBreakdown = new LinkedHashMap<>();
                 List<Coa> subAccounts = coaRepository.findByParentAccount_IdIn(List.of(parentCoa.getId()));
 
-                // Hitung breakdown untuk setiap sub-akun
                 for (Coa subCoa : subAccounts) {
                     Map<String, Double> subBreakdown = calculateMonthlyBreakdown(subCoa.getId(), month1, year1, month2, year2);
                     parentBreakdown.put(subCoa.getAccountCode() + " " + subCoa.getAccountName(), subBreakdown);
 
-                    // Tambahkan nilai bulanan ke monthlyTotals
                     subBreakdown.forEach((month, value) ->
                             monthlyTotals.merge(month, value, Double::sum)
                     );
@@ -295,7 +289,6 @@ public class JurnalController {
             }
         }
 
-        // Masukkan total bulanan ke dalam details
         monthlyTotals.forEach((month, total) -> details.put("Total " + month, total));
 
         return details;

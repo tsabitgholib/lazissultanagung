@@ -48,7 +48,7 @@ public class LaporanAktivitasZakatController {
         response.put("Penerimaan Dana", penerimaanZakatDetails);
 
         // Pendayagunaan Dana Zakat (COA ID 56)
-        Map<String, Object> pendayagunaanZakatDetails = getCoaDetailsWithTransactions(56L, month1, year1, month2, year2);
+        Map<String, Object> pendayagunaanZakatDetails = getPendayagunaanByCategory(month1, year1, month2, year2);
         response.put("Pendayagunaan Dana", pendayagunaanZakatDetails);
 
         // Variabel untuk menyimpan surplus/defisit per bulan
@@ -183,5 +183,91 @@ public class LaporanAktivitasZakatController {
 
         return monthlyTotals;
     }
+
+    private Map<String, List<Long>> getPendayagunaanCategories() {
+
+    Map<String, List<Long>> categories = new LinkedHashMap<>();
+
+    categories.put("Fakir", List.of(57L, 64L, 67L, 68L));
+    categories.put("Miskin", List.of(70L));
+    categories.put("Amil", List.of(62L));
+    categories.put("Muallaf", List.of(59L));
+    categories.put("Fiisabilillah", List.of(58L, 60L, 61L, 63L, 66L, 65L));
+    categories.put("Ibnu Sabil", List.of(69L));
+
+    return categories;
+}
+
+private Map<String, Object> getPendayagunaanByCategory(
+        int month1, int year1, int month2, int year2) {
+
+    Map<String, Object> result = new LinkedHashMap<>();
+    Map<String, List<Long>> categories = getPendayagunaanCategories();
+
+    String month1Name = Month.of(month1).name() + " " + year1;
+    String month2Name = Month.of(month2).name() + " " + year2;
+
+    double totalMonth1 = 0;
+    double totalMonth2 = 0;
+
+    for (var entry : categories.entrySet()) {
+
+        String category = entry.getKey();
+        List<Long> coaIds = entry.getValue();
+
+        Map<String, Double> monthlyTotals =
+                calculateMonthlyBreakdownForMultipleCoa(
+                        coaIds, month1, year1, month2, year2);
+
+        result.put(category, monthlyTotals);
+
+        totalMonth1 += monthlyTotals.getOrDefault(month1Name,0.0);
+        totalMonth2 += monthlyTotals.getOrDefault(month2Name,0.0);
+    }
+
+    result.put("Total Bulan " + month1Name, totalMonth1);
+    result.put("Total Bulan " + month2Name, totalMonth2);
+
+    return result;
+}
+
+private Map<String, Double> calculateMonthlyBreakdownForMultipleCoa(
+        List<Long> coaIds,
+        int month1, int year1,
+        int month2, int year2) {
+
+    Map<String, Double> monthlyTotals = new LinkedHashMap<>();
+
+    LocalDate startDate = LocalDate.of(year1, month1, 1);
+    LocalDate endDate = LocalDate.of(year2, month2, 1)
+            .plusMonths(1)
+            .minusDays(1);
+
+    LocalDate current = startDate;
+
+    while (!current.isAfter(endDate)) {
+
+        LocalDateTime monthStart =
+                current.withDayOfMonth(1).atStartOfDay();
+
+        LocalDateTime monthEnd =
+                current.withDayOfMonth(current.lengthOfMonth())
+                        .atTime(LocalTime.MAX);
+
+        Double total =
+                transactionRepository.sumByCoaIdsAndDateRange(
+                        coaIds, monthStart, monthEnd);
+
+        monthlyTotals.put(
+                current.getMonth().name() + " " + current.getYear(),
+                total != null ? total : 0.0
+        );
+
+        current = current.plusMonths(1);
+    }
+
+    return monthlyTotals;
+}
+
 }
 
