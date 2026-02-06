@@ -58,6 +58,8 @@ public class DSKLServiceImpl implements DSKLService{
         updateDSKL.setAmount(dskl.getAmount());
         updateDSKL.setDistribution(dskl.getDistribution());
         updateDSKL.setEmergency(dskl.isEmergency());
+        updateDSKL.setCoaDebit(dskl.getCoaDebit());
+        updateDSKL.setCoaKredit(dskl.getCoaKredit());
 
         return dsklRepository.save(updateDSKL);
     }

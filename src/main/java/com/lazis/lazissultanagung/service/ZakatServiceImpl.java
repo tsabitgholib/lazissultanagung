@@ -63,6 +63,8 @@ public class ZakatServiceImpl implements ZakatService {
         updateZakat.setAmount(zakat.getAmount());
         updateZakat.setDistribution(zakat.getDistribution());
         updateZakat.setEmergency(zakat.isEmergency());
+        updateZakat.setCoaDebit(zakat.getCoaDebit());
+        updateZakat.setCoaKredit(zakat.getCoaKredit());
 
         return zakatRepository.save(updateZakat);
     }

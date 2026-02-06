@@ -57,6 +57,8 @@ public class InfakServiceImpl implements InfakService{
         updateInfak.setAmount(infak.getAmount());
         updateInfak.setDistribution(infak.getDistribution());
         updateInfak.setEmergency(infak.isEmergency());
+        updateInfak.setCoaDebit(infak.getCoaDebit());
+        updateInfak.setCoaKredit(infak.getCoaKredit());
 
         return infakRepository.save(updateInfak);
     }

@@ -4,7 +4,7 @@ import lombok.Data;
 
 @Data
 public class AgenRequest {
-    private String name;
+    private String username;
     private String phoneNumber;
     private String email;
     private String password;

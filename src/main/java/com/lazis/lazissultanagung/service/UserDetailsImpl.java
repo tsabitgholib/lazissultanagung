@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.lazis.lazissultanagung.model.Admin;
+import com.lazis.lazissultanagung.model.Agen;
 import com.lazis.lazissultanagung.model.Donatur;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -58,6 +59,20 @@ public class UserDetailsImpl implements UserDetails {
                 admin.getPhoneNumber(),
                 admin.getEmail(),
                 admin.getPassword(),
+                authorities
+        );
+    }
+
+    public static UserDetailsImpl build(Agen agen) {
+        Set<SimpleGrantedAuthority> authorities = new HashSet<>();
+        authorities.add(new SimpleGrantedAuthority("ROLE_AGEN"));
+
+        return new UserDetailsImpl(
+                agen.getId(),
+                agen.getUsername(),
+                agen.getPhoneNumber(),
+                agen.getEmail(),
+                agen.getPassword(),
                 authorities
         );
     }

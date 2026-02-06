@@ -21,4 +21,12 @@ public class Zakat implements BaseModel {
 
     @Column(columnDefinition = "BOOLEAN")
     private boolean emergency;
+
+    @ManyToOne
+    @JoinColumn(name = "coa_debit_id", referencedColumnName = "id")
+    private Coa coaDebit;
+
+    @ManyToOne
+    @JoinColumn(name = "coa_kredit_id", referencedColumnName = "id")
+    private Coa coaKredit;
 }

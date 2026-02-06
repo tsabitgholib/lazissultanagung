@@ -231,7 +231,7 @@ public class CampaignServiceImpl implements CampaignService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null || !(authentication.getPrincipal() instanceof UserDetailsImpl)) {
-            throw new BadRequestException("Admin tidak terautentikasi");
+            throw new BadRequestException("Admin tidak ditemukan");
         }
 
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();

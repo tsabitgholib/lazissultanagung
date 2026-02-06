@@ -109,7 +109,7 @@ public class AdminServiceImpl implements AdminService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null || !(authentication.getPrincipal() instanceof UserDetailsImpl)) {
-            throw new BadRequestException("Admin tidak terautentikasi");
+            throw new BadRequestException("Admin tidak ditemukan");
         }
 
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
@@ -130,7 +130,7 @@ public class AdminServiceImpl implements AdminService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null || !(authentication.getPrincipal() instanceof UserDetailsImpl)) {
-            throw new BadRequestException("Admin tidak terautentikasi");
+            throw new BadRequestException("Admin tidak ditemukan");
         }
 
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
