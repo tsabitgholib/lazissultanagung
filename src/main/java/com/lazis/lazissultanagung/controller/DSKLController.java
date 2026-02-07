@@ -27,8 +27,8 @@ public class DSKLController {
 
     @PostMapping("/create")
     public ResponseEntity<DSKL> createDSKL(@RequestBody DSKL dskl) {
-        // DSKL createDSKL = dsklService.createDSKL(dskl);
-        return ResponseEntity.ok(dskl);
+        DSKL createDSKL = dsklService.createDSKL(dskl);
+        return ResponseEntity.ok(createDSKL);
     }
 
     @PutMapping("/update/{id}")
