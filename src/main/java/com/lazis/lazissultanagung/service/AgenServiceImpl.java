@@ -63,6 +63,8 @@ public class AgenServiceImpl implements AgenService {
         );
         
         agen.setTargetAmount(agenRequest.getTargetAmount());
+        agen.setCreatedAt(new Date());
+        agen.setUpdatedAt(new Date());
         
         return agenRepository.save(agen);
     }
