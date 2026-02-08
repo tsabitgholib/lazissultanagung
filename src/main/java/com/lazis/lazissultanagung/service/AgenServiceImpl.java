@@ -5,14 +5,13 @@ import com.lazis.lazissultanagung.exception.BadRequestException;
 import com.lazis.lazissultanagung.model.Agen;
 import com.lazis.lazissultanagung.repository.AgenRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
+import java.util.List;
 
 @Service
 public class AgenServiceImpl implements AgenService {
@@ -101,7 +100,7 @@ public class AgenServiceImpl implements AgenService {
     }
 
     @Override
-    public Page<Agen> getAllAgen(Pageable pageable) {
-        return agenRepository.findAll(pageable);
+    public List<Agen> getAllAgen() {
+        return agenRepository.findAll();
     }
 }

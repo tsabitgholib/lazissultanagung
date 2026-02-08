@@ -4,12 +4,11 @@ import com.lazis.lazissultanagung.dto.request.AgenRequest;
 import com.lazis.lazissultanagung.model.Agen;
 import com.lazis.lazissultanagung.service.AgenService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.util.List;
 
 @CrossOrigin(origins= {"*"}, maxAge = 4800, allowCredentials = "false" )
 @RestController
@@ -47,8 +46,7 @@ public class AgenController {
     }
 
     @GetMapping("/get-all")
-    public ResponseEntity<Page<Agen>> getAllAgen(@RequestParam(defaultValue = "0") int page,
-                                                 @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.ok(agenService.getAllAgen(PageRequest.of(page, size)));
+    public ResponseEntity<List<Agen>> getAllAgen() {
+        return ResponseEntity.ok(agenService.getAllAgen());
     }
 }
