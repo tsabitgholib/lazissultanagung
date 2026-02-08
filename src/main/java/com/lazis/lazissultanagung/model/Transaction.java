@@ -34,10 +34,16 @@ public class Transaction {
     @Column
     private String email;
 
+    @Column(columnDefinition = "TEXT")
+    private String address;
+
     private double transactionAmount;
 
     @Column(columnDefinition = "TEXT")
     private String message;
+
+    @Column(length = 255)
+    private String paymentProofImage;
 
     @Column(nullable = false, updatable = false)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:s")
@@ -88,4 +94,7 @@ public class Transaction {
     @ManyToOne
     @JoinColumn(name = "wakaf_id")
     private Wakaf wakaf;
+
+    private Long agenId;
+    private Long eventId;
 }

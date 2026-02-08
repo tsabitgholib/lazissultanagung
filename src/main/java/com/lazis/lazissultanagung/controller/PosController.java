@@ -1,0 +1,73 @@
+package com.lazis.lazissultanagung.controller;
+
+import com.lazis.lazissultanagung.dto.request.PosTransactionRequest;
+import com.lazis.lazissultanagung.dto.response.PosHistoryResponse;
+import com.lazis.lazissultanagung.dto.response.PosTransactionResponse;
+import com.lazis.lazissultanagung.dto.response.ResponseMessage;
+import com.lazis.lazissultanagung.exception.BadRequestException;
+import com.lazis.lazissultanagung.service.PosService;
+import com.lazis.lazissultanagung.service.UserDetailsImpl;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
+import java.util.List;
+
+@CrossOrigin(origins= {"*"}, maxAge = 4800, allowCredentials = "false" )
+@RestController
+@RequestMapping("api/pos")
+public class PosController {
+
+    @Autowired
+    private PosService posService;
+
+    @GetMapping("/history")
+    public ResponseEntity<Page<PosHistoryResponse>> getPosHistory(
+            @RequestParam(required = false) Long eventId,
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String paymentMethod,
+            @PageableDefault(sort = "transactionDate", direction = Sort.Direction.DESC) Pageable pageable,
+            Authentication authentication) {
+        
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        Long agenId = userDetails.getId();
+        
+        Page<PosHistoryResponse> history = posService.getPosHistory(agenId, eventId, startDate, endDate, category, paymentMethod, pageable);
+        return ResponseEntity.ok(history);
+    }
+
+    @GetMapping("/history-by-agent")
+    public ResponseEntity<Page<PosHistoryResponse>> getPosHistoryByAgentId(
+            @RequestParam(required = false) Long agenId,
+            @RequestParam(required = false) Long eventId,
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String paymentMethod,
+            @PageableDefault(sort = "transactionDate", direction = Sort.Direction.DESC) Pageable pageable) {
+        
+        Page<PosHistoryResponse> history = posService.getPosHistory(agenId, eventId, startDate, endDate, category, paymentMethod, pageable);
+        return ResponseEntity.ok(history);
+    }
+
+    @PostMapping(value = "/create-transaction", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> createPosTransaction(@ModelAttribute PosTransactionRequest request, Authentication authentication) {
+        try {
+            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+            Long agenId = userDetails.getId();
+            PosTransactionResponse response = posService.createPosTransaction(request, agenId);
+            return ResponseEntity.ok(response);
+        } catch (BadRequestException e) {
+            return ResponseEntity.badRequest().body(new ResponseMessage(false, e.getMessage()));
+        }
+    }
+}

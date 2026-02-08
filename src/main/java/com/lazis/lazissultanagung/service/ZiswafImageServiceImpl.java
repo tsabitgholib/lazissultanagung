@@ -56,6 +56,7 @@ public class ZiswafImageServiceImpl implements ZiswafImageService{
         return entity;
     }
 
+
     @Override
     public ZiswafImage update(Long id, ZiswafImageRequest request) {
         ZiswafImage entity = getById(id);
