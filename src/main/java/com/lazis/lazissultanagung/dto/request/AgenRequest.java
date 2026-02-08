@@ -9,4 +9,5 @@ public class AgenRequest {
     private String email;
     private String password;
     private String address;
+    private Double targetAmount;
 }

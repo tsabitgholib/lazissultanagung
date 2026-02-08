@@ -34,10 +34,11 @@ public class Agen {
     @Column(nullable = false, updatable = false)
     @JsonFormat(pattern = "yyyy-MM-dd")
     private Date createdAt;
-    
-    @Column(nullable = false, updatable = false)
+
     @JsonFormat(pattern = "yyyy-MM-dd")
     private Date updatedAt;
+
+    private Double targetAmount;
 
     public Agen(String username, String phoneNumber, String email, String password, String address) {
         this.username = username;
