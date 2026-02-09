@@ -514,7 +514,21 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     public List<PosHistoryResponse> getAllTemporaryTransactions() {
-        List<TemporaryTransaction> transactions = temporaryTransactionRepository.findAll();
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Long agenId = null;
+        
+        if (authentication != null && authentication.getPrincipal() instanceof UserDetailsImpl) {
+            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+            agenId = userDetails.getId();
+        }
+
+        List<TemporaryTransaction> transactions;
+        if (agenId != null) {
+            transactions = temporaryTransactionRepository.findByAgenId(agenId);
+        } else {
+            // Fallback or empty if no user logged in (though endpoint likely requires auth)
+            transactions = new ArrayList<>();
+        }
         
         // Use a map to filter distinct transactions by nomorBukti
         Map<String, TemporaryTransaction> distinctTransactions = new LinkedHashMap<>();

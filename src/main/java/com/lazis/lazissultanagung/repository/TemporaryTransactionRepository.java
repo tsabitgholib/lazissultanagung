@@ -10,4 +10,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface TemporaryTransactionRepository extends JpaRepository<TemporaryTransaction, Long> {
     List<TemporaryTransaction> findByNomorBukti(String nomorBukti);
+    List<TemporaryTransaction> findByAgenId(Long agenId);
 }
