@@ -15,6 +15,8 @@ public class PosTransactionResponse {
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate tanggal;
     
+    private String nomorBukti;
+    
     private String nama;
     private String noHp;
     private String email;

@@ -57,6 +57,9 @@ public class TransactionServiceImpl implements TransactionService {
     @Autowired
     private ModelMapper modelMapper;
 
+    @Autowired
+    private TemporaryTransactionRepository temporaryTransactionRepository;
+
     @Override
     public Page<TransactionResponse> getAllTransaction(Integer month, Integer year, Pageable pageable) {
         return transactionRepository.findAllByMonthAndYear(month, year, pageable)
@@ -397,10 +400,65 @@ public class TransactionServiceImpl implements TransactionService {
                         break;
                 }
             }
-
-            return new ResponseMessage(true, "Input jurnal umum berhasil disimpan"); // Kembalikan respon menggunakan transaksi debit
+            return new ResponseMessage(true, "Jurnal umum berhasil dibuat");
         }
         throw new BadRequestException("Admin tidak ditemukan");
+    }
+
+    @Override
+    public ResponseMessage validateTemporaryTransaction(String nomorBukti) {
+        List<TemporaryTransaction> tempTransactions = temporaryTransactionRepository.findByNomorBukti(nomorBukti);
+        if (tempTransactions.isEmpty()) {
+            throw new BadRequestException("Temporary transaction not found");
+        }
+
+        // Generate Nomor Bukti (Reused logic)
+        Integer lastTransactionNumber = transactionRepository.findLastTransactionNumber();
+        int newTransactionNumber = (lastTransactionNumber == null ? 1 : lastTransactionNumber + 1);
+        String transactionNumberFormatted = String.valueOf(newTransactionNumber);
+        String staticPart = "LAZ";
+        String datePart = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM/yyyy"));
+        String newNomorBukti = transactionNumberFormatted + "/" + staticPart + "/" + datePart;
+
+        for (TemporaryTransaction temp : tempTransactions) {
+            Transaction transaction = new Transaction();
+            transaction.setTransactionDate(temp.getTransactionDate());
+            transaction.setUsername(temp.getUsername());
+            transaction.setPhoneNumber(temp.getPhoneNumber());
+            transaction.setEmail(temp.getEmail());
+            transaction.setAddress(temp.getAddress());
+            transaction.setTransactionAmount(temp.getTransactionAmount());
+            transaction.setMessage(temp.getMessage());
+            transaction.setPaymentProofImage(temp.getPaymentProofImage());
+            transaction.setChannel(temp.getChannel());
+            transaction.setVaNumber(temp.getVaNumber());
+            transaction.setRefNo(temp.getRefNo());
+            transaction.setMethod(temp.getMethod());
+            transaction.setPrefix(temp.getPrefix());
+            transaction.setWorkstation(temp.getWorkstation());
+            transaction.setTransactionQrId(temp.getTransactionQrId());
+            transaction.setSuccess(temp.isSuccess());
+            transaction.setCategory(temp.getCategory());
+            transaction.setCoa(temp.getCoa());
+            transaction.setDebit(temp.getDebit());
+            transaction.setKredit(temp.getKredit());
+            transaction.setNomorBukti(newNomorBukti); // New Nomor Bukti
+            transaction.setPenyaluran(temp.isPenyaluran());
+            transaction.setCampaign(temp.getCampaign());
+            transaction.setZakat(temp.getZakat());
+            transaction.setInfak(temp.getInfak());
+            transaction.setDskl(temp.getDskl());
+            transaction.setWakaf(temp.getWakaf());
+            transaction.setAgenId(temp.getAgenId());
+            transaction.setEventId(temp.getEventId());
+            transaction.setDonatur(temp.getDonatur());
+
+            transactionRepository.save(transaction);
+        }
+
+        temporaryTransactionRepository.deleteAll(tempTransactions);
+
+        return new ResponseMessage(true, "Transaction validated successfully");
     }
 
 

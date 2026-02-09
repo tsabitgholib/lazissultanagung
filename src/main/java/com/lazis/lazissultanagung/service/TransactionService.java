@@ -45,4 +45,6 @@ public interface TransactionService {
     Map<String, Object> getJurnalUmumByNomorBukti(String nomorBukti) throws BadRequestException;
 
     List<Map<String, Object>> getAllPenyaluran();
+
+    ResponseMessage validateTemporaryTransaction(String nomorBukti);
 }

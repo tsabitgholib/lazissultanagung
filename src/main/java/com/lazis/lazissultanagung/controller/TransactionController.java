@@ -56,6 +56,16 @@ public class TransactionController {
         return new ResponseMessage(true, "Input Jurnal umum berhasil disimpan");
     }
 
+    @PostMapping("/validate-temp/{nomorBukti}")
+    public ResponseEntity<ResponseMessage> validateTemporaryTransaction(@PathVariable String nomorBukti) {
+        try {
+            ResponseMessage response = transactionService.validateTemporaryTransaction(nomorBukti);
+            return ResponseEntity.ok(response);
+        } catch (BadRequestException e) {
+            return ResponseEntity.badRequest().body(new ResponseMessage(false, e.getMessage()));
+        }
+    }
+
     @GetMapping("/campaign/{campaignId}")
     public ResponseEntity<Page<TransactionResponse>> getTransactionsByCampaignId(
             @PathVariable Long campaignId,

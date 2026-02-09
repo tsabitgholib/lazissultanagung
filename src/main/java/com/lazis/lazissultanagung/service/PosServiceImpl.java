@@ -55,6 +55,9 @@ public class PosServiceImpl implements PosService {
     @Autowired
     private EventRepository eventRepository;
 
+    @Autowired
+    private TemporaryTransactionRepository temporaryTransactionRepository;
+
     @Override
     @Transactional
     public PosTransactionResponse createPosTransaction(PosTransactionRequest request, Long agenId) {
@@ -154,6 +157,93 @@ public class PosServiceImpl implements PosService {
 
         LocalDateTime transactionDateTime = request.getDate().atTime(LocalTime.now());
 
+        // Check for Transfer or QRIS payment method
+        String paymentMethod = request.getPaymentMethod();
+        if (paymentMethod != null && (paymentMethod.equalsIgnoreCase("transfer") || paymentMethod.equalsIgnoreCase("qris"))) {
+            // Generate temporary nomor bukti
+            // Format: TMP-yyyyMMddHHmmss-Random3Digits
+            String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+            String randomSuffix = String.format("%03d", (int) (Math.random() * 1000));
+            String tempNomorBukti = "TMP-" + timestamp + "-" + randomSuffix;
+
+            // Temporary Transaction Debit
+            TemporaryTransaction tempDebit = new TemporaryTransaction();
+            tempDebit.setNomorBukti(tempNomorBukti);
+            tempDebit.setTransactionDate(transactionDateTime);
+            tempDebit.setUsername(request.getName());
+            tempDebit.setPhoneNumber(request.getPhoneNumber());
+            tempDebit.setEmail(request.getEmail());
+            tempDebit.setAddress(request.getAddress());
+            tempDebit.setMessage(request.getDescription());
+            tempDebit.setDebit(request.getAmount());
+            tempDebit.setKredit(0.0);
+            tempDebit.setCoa(coaDebit);
+            tempDebit.setTransactionAmount(request.getAmount());
+            tempDebit.setMethod(paymentMethod);
+            tempDebit.setChannel("POS");
+            tempDebit.setSuccess(true); // Or false if pending validation? User said same as transaction, usually true implies payment successful.
+            tempDebit.setCategory(request.getCategoryType());
+            tempDebit.setAgenId(agenId);
+            tempDebit.setEventId(request.getEventId());
+            tempDebit.setPaymentProofImage(imageFileName);
+            setTemporaryTransactionCategory(tempDebit, categoryType, categoryEntity);
+            temporaryTransactionRepository.save(tempDebit);
+
+            // Temporary Transaction Credit
+            TemporaryTransaction tempKredit = new TemporaryTransaction();
+            tempKredit.setNomorBukti(tempNomorBukti);
+            tempKredit.setTransactionDate(transactionDateTime);
+            tempKredit.setUsername(request.getName());
+            tempKredit.setPhoneNumber(request.getPhoneNumber());
+            tempKredit.setEmail(request.getEmail());
+            tempKredit.setAddress(request.getAddress());
+            tempKredit.setMessage(request.getDescription());
+            tempKredit.setDebit(0.0);
+            tempKredit.setKredit(request.getAmount());
+            tempKredit.setCoa(coaKredit);
+            tempKredit.setTransactionAmount(request.getAmount());
+            tempKredit.setMethod(paymentMethod);
+            tempKredit.setChannel("POS");
+            tempKredit.setSuccess(true);
+            tempKredit.setCategory(request.getCategoryType());
+            tempKredit.setAgenId(agenId);
+            tempKredit.setEventId(request.getEventId());
+            tempKredit.setPaymentProofImage(imageFileName);
+            setTemporaryTransactionCategory(tempKredit, categoryType, categoryEntity);
+            temporaryTransactionRepository.save(tempKredit);
+
+            // Prepare Response (same as normal flow)
+            PosTransactionResponse response = new PosTransactionResponse();
+            response.setNomorBukti(tempNomorBukti);
+            response.setTanggal(request.getDate());
+            response.setNama(request.getName());
+            response.setNoHp(request.getPhoneNumber());
+            response.setEmail(request.getEmail());
+            response.setAlamat(request.getAddress());
+            
+            List<DonationDetailDto> donationDetails = new ArrayList<>();
+            String[] categories = {"zakat", "infak", "dskl", "campaign"};
+
+            for (String cat : categories) {
+                DonationDetailDto detail = new DonationDetailDto();
+                detail.setKategori(cat);
+                
+                if (cat.equalsIgnoreCase(categoryType)) {
+                    detail.setSubKategori(subCategoryName);
+                    detail.setNominal(request.getAmount());
+                } else {
+                    detail.setSubKategori("");
+                    detail.setNominal(0.0);
+                }
+                donationDetails.add(detail);
+            }
+            
+            response.setDonasi(donationDetails);
+            response.setTerbilang(TerbilangUtil.terbilang(request.getAmount()));
+            
+            return response;
+        }
+
         // Buat Transaksi Debit
         Transaction transactionDebit = new Transaction();
         transactionDebit.setTransactionDate(transactionDateTime);
@@ -238,6 +328,23 @@ public class PosServiceImpl implements PosService {
     }
 
     private void setTransactionCategory(Transaction transaction, String categoryType, Object categoryEntity) {
+        switch (categoryType) {
+            case "zakat":
+                transaction.setZakat((Zakat) categoryEntity);
+                break;
+            case "infak":
+                transaction.setInfak((Infak) categoryEntity);
+                break;
+            case "dskl":
+                transaction.setDskl((DSKL) categoryEntity);
+                break;
+            case "campaign":
+                transaction.setCampaign((Campaign) categoryEntity);
+                break;
+        }
+    }
+
+    private void setTemporaryTransactionCategory(TemporaryTransaction transaction, String categoryType, Object categoryEntity) {
         switch (categoryType) {
             case "zakat":
                 transaction.setZakat((Zakat) categoryEntity);
