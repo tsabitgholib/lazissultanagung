@@ -515,8 +515,16 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     public List<PosHistoryResponse> getAllTemporaryTransactions() {
         List<TemporaryTransaction> transactions = temporaryTransactionRepository.findAll();
+        
+        // Use a map to filter distinct transactions by nomorBukti
+        Map<String, TemporaryTransaction> distinctTransactions = new LinkedHashMap<>();
+        for (TemporaryTransaction t : transactions) {
+            // If the nomorBukti is not already in the map, add it
+            // This effectively takes the first occurrence and ignores subsequent ones with the same nomorBukti
+            distinctTransactions.putIfAbsent(t.getNomorBukti(), t);
+        }
 
-        return transactions.stream().map(temp -> {
+        return distinctTransactions.values().stream().map(temp -> {
             PosHistoryResponse response = new PosHistoryResponse();
             response.setId(temp.getId());
             response.setTanggal(temp.getTransactionDate());
