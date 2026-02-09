@@ -157,6 +157,9 @@ public class PosServiceImpl implements PosService {
 
         LocalDateTime transactionDateTime = request.getDate().atTime(LocalTime.now());
 
+        String paymentMethod = request.getPaymentMethod();
+        boolean isTemporary = paymentMethod != null && (paymentMethod.equalsIgnoreCase("transfer") || paymentMethod.equalsIgnoreCase("qris"));
+
         // Check for Transfer or QRIS payment method
         if (isTemporary) {
             // Generate temporary nomor bukti

@@ -504,7 +504,7 @@ public class TransactionServiceImpl implements TransactionService {
                 break;
             case "campaign":
                 if (temp.getCampaign() != null) {
-                    campaignRepository.updateCampaignCurrentAmount(temp.getCampaign().getId(), temp.getTransactionAmount());
+                    campaignRepository.updateCampaignCurrentAmount(temp.getCampaign().getCampaignId(), temp.getTransactionAmount());
                 }
                 break;
         }
