@@ -10,8 +10,12 @@ import org.springframework.data.domain.Pageable;
 import java.time.LocalDate;
 import java.util.List;
 
+import com.lazis.lazissultanagung.dto.response.PosDashboardResponse;
+
 public interface PosService {
     PosTransactionResponse createPosTransaction(PosTransactionRequest request, Long agenId);
     
     Page<PosHistoryResponse> getPosHistory(Long agenId, Long eventId, LocalDate startDate, LocalDate endDate, String category, String paymentMethod, Pageable pageable);
+
+    PosDashboardResponse getPosDashboard(Long agenId);
 }

@@ -2,6 +2,7 @@ package com.lazis.lazissultanagung.service;
 
 import com.lazis.lazissultanagung.dto.request.PosTransactionRequest;
 import com.lazis.lazissultanagung.dto.response.DonationDetailDto;
+import com.lazis.lazissultanagung.dto.response.PosDashboardResponse;
 import com.lazis.lazissultanagung.dto.response.PosHistoryResponse;
 import com.lazis.lazissultanagung.dto.response.PosTransactionResponse;
 import com.lazis.lazissultanagung.exception.BadRequestException;
@@ -57,6 +58,9 @@ public class PosServiceImpl implements PosService {
 
     @Autowired
     private TemporaryTransactionRepository temporaryTransactionRepository;
+
+    @Autowired
+    private AgenRepository agenRepository;
 
     @Override
     @Transactional
@@ -386,6 +390,69 @@ public class PosServiceImpl implements PosService {
         Page<Transaction> transactions = transactionRepository.findAll(spec, pageable);
 
         return transactions.map(this::mapTransactionToHistoryResponse);
+    }
+
+    @Override
+    public PosDashboardResponse getPosDashboard(Long agenId) {
+        // Category Summary
+        List<Object[]> categoryData = transactionRepository.getCategorySummaryByAgenId(agenId);
+        
+        List<PosDashboardResponse.CategoryNominalSummary> categoryNominalSummaries = categoryData.stream()
+                .map(obj -> new PosDashboardResponse.CategoryNominalSummary(
+                        (String) obj[0],
+                        (Double) obj[1]
+                ))
+                .collect(Collectors.toList());
+
+        List<PosDashboardResponse.CategoryCountSummary> categoryCountSummaries = categoryData.stream()
+                .map(obj -> new PosDashboardResponse.CategoryCountSummary(
+                        (String) obj[0],
+                        (Long) obj[2]
+                ))
+                .collect(Collectors.toList());
+
+        // Payment Method Summary
+        List<Object[]> paymentData = transactionRepository.getPaymentMethodSummaryByAgenId(agenId);
+        List<PosDashboardResponse.PaymentMethodSummary> paymentSummaries = paymentData.stream()
+                .map(obj -> new PosDashboardResponse.PaymentMethodSummary(
+                        (String) obj[0],
+                        (Long) obj[1]
+                ))
+                .collect(Collectors.toList());
+
+        // Event Summary
+        List<Object[]> eventData = transactionRepository.getEventSummaryByAgenId(agenId);
+        List<PosDashboardResponse.EventSummary> eventSummaries = eventData.stream()
+                .map(obj -> {
+                    Long eventId = (Long) obj[0];
+                    Double totalNominal = (Double) obj[1];
+                    String eventName = "Unknown Event";
+                    if (eventId != null) {
+                        eventName = eventRepository.findById(eventId)
+                                .map(Event::getName)
+                                .orElse("Unknown Event");
+                    }
+                    return new PosDashboardResponse.EventSummary(eventName, totalNominal);
+                })
+                .collect(Collectors.toList());
+
+        // Target Summary
+        Double currentTotal = transactionRepository.getTotalDonationByAgenId(agenId);
+        Double target = 0.0;
+        Double percentage = 0.0;
+        
+        com.lazis.lazissultanagung.model.Agen agen = agenRepository.findById(agenId).orElse(null);
+        if (agen != null && agen.getTargetAmount() != null) {
+            target = agen.getTargetAmount();
+        }
+        
+        if (target > 0) {
+            percentage = (currentTotal / target) * 100;
+        }
+        
+        PosDashboardResponse.TargetSummary targetSummary = new PosDashboardResponse.TargetSummary(target, currentTotal, percentage);
+
+        return new PosDashboardResponse(categoryNominalSummaries, categoryCountSummaries, paymentSummaries, eventSummaries, targetSummary);
     }
 
     private PosHistoryResponse mapTransactionToHistoryResponse(Transaction transaction) {

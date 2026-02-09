@@ -1,6 +1,7 @@
 package com.lazis.lazissultanagung.controller;
 
 import com.lazis.lazissultanagung.dto.request.PosTransactionRequest;
+import com.lazis.lazissultanagung.dto.response.PosDashboardResponse;
 import com.lazis.lazissultanagung.dto.response.PosHistoryResponse;
 import com.lazis.lazissultanagung.dto.response.PosTransactionResponse;
 import com.lazis.lazissultanagung.dto.response.ResponseMessage;
@@ -43,6 +44,15 @@ public class PosController {
         
         Page<PosHistoryResponse> history = posService.getPosHistory(agenId, eventId, startDate, endDate, category, paymentMethod, pageable);
         return ResponseEntity.ok(history);
+    }
+
+    @GetMapping("/dashboard")
+    public ResponseEntity<PosDashboardResponse> getPosDashboard(Authentication authentication) {
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        Long agenId = userDetails.getId();
+        
+        PosDashboardResponse dashboard = posService.getPosDashboard(agenId);
+        return ResponseEntity.ok(dashboard);
     }
 
     @GetMapping("/history-by-agent")

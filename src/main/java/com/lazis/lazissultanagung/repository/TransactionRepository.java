@@ -94,11 +94,26 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long>,
     @Query("select COALESCE(count(t.phoneNumber), 0.0) from Transaction t where t.zakat is not null and t.debit != 0 AND t.penyaluran = false")
     long getTotalDonaturZakat();
 
-    @Query("select COALESCE(count(t.phoneNumber), 0.0) from Transaction t where t.infak is not null and t.debit != 0 AND t.penyaluran = false")
-    long getTotalDonaturInfak();
-
     @Query("select COALESCE(count(t.phoneNumber), 0.0) from Transaction t where t.wakaf is not null and t.debit != 0 AND t.penyaluran = false")
     long getTotalDonaturWakaf();
+
+    @Query("SELECT t.category, SUM(t.debit), COUNT(t) FROM Transaction t " +
+            "WHERE t.agenId = :agenId AND t.channel = 'POS' AND t.penyaluran = false AND t.debit > 0 " +
+            "GROUP BY t.category")
+    List<Object[]> getCategorySummaryByAgenId(@Param("agenId") Long agenId);
+
+    @Query("SELECT t.method, COUNT(t) FROM Transaction t " +
+            "WHERE t.agenId = :agenId AND t.channel = 'POS' AND t.penyaluran = false AND t.debit > 0 " +
+            "GROUP BY t.method")
+    List<Object[]> getPaymentMethodSummaryByAgenId(@Param("agenId") Long agenId);
+
+    @Query("SELECT t.eventId, SUM(t.debit) FROM Transaction t " +
+            "WHERE t.agenId = :agenId AND t.channel = 'POS' AND t.penyaluran = false AND t.debit > 0 AND t.eventId IS NOT NULL " +
+            "GROUP BY t.eventId")
+    List<Object[]> getEventSummaryByAgenId(@Param("agenId") Long agenId);
+
+    @Query("SELECT COALESCE(SUM(t.debit), 0) FROM Transaction t WHERE t.agenId = :agenId AND t.channel = 'POS' AND t.penyaluran = false")
+    Double getTotalDonationByAgenId(@Param("agenId") Long agenId);
 
     @Query("select COALESCE(count(t.phoneNumber), 0.0) from Transaction t where t.dskl is not null and t.debit != 0 AND t.penyaluran = false")
     long getTotalDonaturDSKL();
