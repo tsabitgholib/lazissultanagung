@@ -94,6 +94,9 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long>,
     @Query("select COALESCE(count(t.phoneNumber), 0.0) from Transaction t where t.zakat is not null and t.debit != 0 AND t.penyaluran = false")
     long getTotalDonaturZakat();
 
+    @Query("select COALESCE(count(t.phoneNumber), 0.0) from Transaction t where t.infak is not null and t.debit != 0 AND t.penyaluran = false")
+    long getTotalDonaturInfak();
+
     @Query("select COALESCE(count(t.phoneNumber), 0.0) from Transaction t where t.wakaf is not null and t.debit != 0 AND t.penyaluran = false")
     long getTotalDonaturWakaf();
 
