@@ -1,6 +1,7 @@
 package com.lazis.lazissultanagung.service;
 
 import com.lazis.lazissultanagung.dto.request.JurnalUmumRequest;
+import com.lazis.lazissultanagung.dto.response.PosHistoryResponse;
 import com.lazis.lazissultanagung.dto.response.ResponseMessage;
 import com.lazis.lazissultanagung.dto.response.TransactionResponse;
 import com.lazis.lazissultanagung.dto.response.DonaturTransactionsHistoryResponse;
@@ -512,8 +513,40 @@ public class TransactionServiceImpl implements TransactionService {
 
 
     @Override
-    public List<TemporaryTransaction> getAllTemporaryTransactions() {
-        return temporaryTransactionRepository.findAll();
+    public List<PosHistoryResponse> getAllTemporaryTransactions() {
+        List<TemporaryTransaction> transactions = temporaryTransactionRepository.findAll();
+
+        return transactions.stream().map(temp -> {
+            PosHistoryResponse response = new PosHistoryResponse();
+            response.setId(temp.getId());
+            response.setTanggal(temp.getTransactionDate());
+            response.setNomorBukti(temp.getNomorBukti());
+            response.setNama(temp.getUsername());
+            response.setNoHp(temp.getPhoneNumber());
+            response.setEmail(temp.getEmail());
+            response.setAlamat(temp.getAddress());
+            response.setKategori(temp.getCategory());
+
+            String subKategori = "-";
+            if (temp.getCampaign() != null) {
+                subKategori = temp.getCampaign().getCampaignName();
+            } else if (temp.getZakat() != null) {
+                subKategori = temp.getZakat().getCategoryName();
+            } else if (temp.getInfak() != null) {
+                subKategori = temp.getInfak().getCategoryName();
+            } else if (temp.getDskl() != null) {
+                subKategori = temp.getDskl().getCategoryName();
+            } else if (temp.getWakaf() != null) {
+                subKategori = temp.getWakaf().getCategoryName();
+            }
+            response.setSubKategori(subKategori);
+
+            response.setNominal(temp.getTransactionAmount());
+            response.setMetodePembayaran(temp.getMethod());
+            response.setPaymentProofImage(temp.getPaymentProofImage());
+
+            return response;
+        }).collect(Collectors.toList());
     }
 
     @Override

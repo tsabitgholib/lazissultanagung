@@ -3,6 +3,7 @@ package com.lazis.lazissultanagung.controller;
 import com.lazis.lazissultanagung.dto.request.JurnalUmumRequest;
 import com.lazis.lazissultanagung.dto.request.TransactionRequest;
 import com.lazis.lazissultanagung.dto.response.DonaturTransactionsHistoryResponse;
+import com.lazis.lazissultanagung.dto.response.PosHistoryResponse;
 import com.lazis.lazissultanagung.dto.response.ResponseMessage;
 import com.lazis.lazissultanagung.dto.response.TransactionResponse;
 import com.lazis.lazissultanagung.exception.BadRequestException;
@@ -68,8 +69,8 @@ public class TransactionController {
     }
 
     @GetMapping("/temp")
-    public ResponseEntity<List<TemporaryTransaction>> getAllTemporaryTransactions() {
-        List<TemporaryTransaction> transactions = transactionService.getAllTemporaryTransactions();
+    public ResponseEntity<List<PosHistoryResponse>> getAllTemporaryTransactions() {
+        List<PosHistoryResponse> transactions = transactionService.getAllTemporaryTransactions();
         return ResponseEntity.ok(transactions);
     }
 

@@ -49,5 +49,5 @@ public interface TransactionService {
 
     ResponseMessage validateTemporaryTransaction(String nomorBukti);
 
-    List<TemporaryTransaction> getAllTemporaryTransactions();
+    List<PosHistoryResponse> getAllTemporaryTransactions();
 }
