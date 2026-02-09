@@ -66,6 +66,12 @@ public class TransactionController {
         }
     }
 
+    @GetMapping("/temp")
+    public ResponseEntity<List<TemporaryTransaction>> getAllTemporaryTransactions() {
+        List<TemporaryTransaction> transactions = transactionService.getAllTemporaryTransactions();
+        return ResponseEntity.ok(transactions);
+    }
+
     @GetMapping("/campaign/{campaignId}")
     public ResponseEntity<Page<TransactionResponse>> getTransactionsByCampaignId(
             @PathVariable Long campaignId,

@@ -47,4 +47,6 @@ public interface TransactionService {
     List<Map<String, Object>> getAllPenyaluran();
 
     ResponseMessage validateTemporaryTransaction(String nomorBukti);
+
+    List<TemporaryTransaction> getAllTemporaryTransactions();
 }

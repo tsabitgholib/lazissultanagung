@@ -15,6 +15,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -406,6 +407,7 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
+    @Transactional
     public ResponseMessage validateTemporaryTransaction(String nomorBukti) {
         List<TemporaryTransaction> tempTransactions = temporaryTransactionRepository.findByNomorBukti(nomorBukti);
         if (tempTransactions.isEmpty()) {
@@ -419,6 +421,9 @@ public class TransactionServiceImpl implements TransactionService {
         String staticPart = "LAZ";
         String datePart = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM/yyyy"));
         String newNomorBukti = transactionNumberFormatted + "/" + staticPart + "/" + datePart;
+
+        // Use a set to track processed categories to avoid double counting (since temp transactions come in pairs)
+        Set<String> processedCategories = new HashSet<>();
 
         for (TemporaryTransaction temp : tempTransactions) {
             Transaction transaction = new Transaction();
@@ -454,6 +459,22 @@ public class TransactionServiceImpl implements TransactionService {
             transaction.setDonatur(temp.getDonatur());
 
             transactionRepository.save(transaction);
+            
+            // Update Category Amount logic
+            // We only update once per transaction pair (usually identified by non-zero debit or credit, or just once per unique category entity ID)
+            // Since PosServiceImpl updates amount regardless of Debit/Credit, we should be careful.
+            // PosServiceImpl updates ONCE per request. Here we have 2 records (Debit/Credit).
+            // Both have the same transactionAmount.
+            // We should update only once.
+            // Let's check the Debit record (usually where money comes IN to the system account, wait.
+            // POS: Debit = Cash/Bank, Credit = Revenue (Zakat/Infak).
+            // Usually revenue recognition is on Credit side.
+            // Let's stick to updating once.
+            
+            if (!processedCategories.contains(newNomorBukti)) {
+                 updateCategoryAmount(temp);
+                 processedCategories.add(newNomorBukti);
+            }
         }
 
         temporaryTransactionRepository.deleteAll(tempTransactions);
@@ -461,6 +482,39 @@ public class TransactionServiceImpl implements TransactionService {
         return new ResponseMessage(true, "Transaction validated successfully");
     }
 
+    private void updateCategoryAmount(TemporaryTransaction temp) {
+        String categoryType = temp.getCategory();
+        if (categoryType == null) return;
+        
+        switch (categoryType.toLowerCase()) {
+            case "zakat":
+                if (temp.getZakat() != null) {
+                    zakatRepository.updateZakatCurrentAmount(temp.getZakat().getId(), temp.getTransactionAmount());
+                }
+                break;
+            case "infak":
+                if (temp.getInfak() != null) {
+                    infakRepository.updateInfakCurrentAmount(temp.getInfak().getId(), temp.getTransactionAmount());
+                }
+                break;
+            case "dskl":
+                if (temp.getDskl() != null) {
+                    dsklRepository.updateDSKLCurrentAmount(temp.getDskl().getId(), temp.getTransactionAmount());
+                }
+                break;
+            case "campaign":
+                if (temp.getCampaign() != null) {
+                    campaignRepository.updateCampaignCurrentAmount(temp.getCampaign().getId(), temp.getTransactionAmount());
+                }
+                break;
+        }
+    }
+
+
+    @Override
+    public List<TemporaryTransaction> getAllTemporaryTransactions() {
+        return temporaryTransactionRepository.findAll();
+    }
 
     @Override
     public Page<TransactionResponse> getTransactionsByCampaignId(Long campaignId, Pageable pageable) {
