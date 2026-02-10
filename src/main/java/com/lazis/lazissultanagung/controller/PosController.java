@@ -36,13 +36,14 @@ public class PosController {
             @RequestParam(required = false) LocalDate endDate,
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String paymentMethod,
+            @RequestParam(required = false) String search,
             @PageableDefault(sort = "transactionDate", direction = Sort.Direction.DESC) Pageable pageable,
             Authentication authentication) {
         
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         Long agenId = userDetails.getId();
         
-        Page<PosHistoryResponse> history = posService.getPosHistory(agenId, eventId, startDate, endDate, category, paymentMethod, pageable);
+        Page<PosHistoryResponse> history = posService.getPosHistory(agenId, eventId, startDate, endDate, category, paymentMethod, search, pageable);
         return ResponseEntity.ok(history);
     }
 
@@ -63,9 +64,10 @@ public class PosController {
             @RequestParam(required = false) LocalDate endDate,
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String paymentMethod,
+            @RequestParam(required = false) String search,
             @PageableDefault(sort = "transactionDate", direction = Sort.Direction.DESC) Pageable pageable) {
         
-        Page<PosHistoryResponse> history = posService.getPosHistory(agenId, eventId, startDate, endDate, category, paymentMethod, pageable);
+        Page<PosHistoryResponse> history = posService.getPosHistory(agenId, eventId, startDate, endDate, category, paymentMethod, search, pageable);
         return ResponseEntity.ok(history);
     }
 

@@ -15,7 +15,7 @@ import com.lazis.lazissultanagung.dto.response.PosDashboardResponse;
 public interface PosService {
     PosTransactionResponse createPosTransaction(PosTransactionRequest request, Long agenId);
     
-    Page<PosHistoryResponse> getPosHistory(Long agenId, Long eventId, LocalDate startDate, LocalDate endDate, String category, String paymentMethod, Pageable pageable);
+    Page<PosHistoryResponse> getPosHistory(Long agenId, Long eventId, LocalDate startDate, LocalDate endDate, String category, String paymentMethod, String search, Pageable pageable);
 
     PosDashboardResponse getPosDashboard(Long agenId);
 }

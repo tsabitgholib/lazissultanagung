@@ -368,23 +368,33 @@ public class PosServiceImpl implements PosService {
     }
 
     @Override
-    public Page<PosHistoryResponse> getPosHistory(Long agenId, Long eventId, LocalDate startDate, LocalDate endDate, String category, String paymentMethod, Pageable pageable) {
+    public Page<PosHistoryResponse> getPosHistory(Long agenId, Long eventId, LocalDate startDate, LocalDate endDate, String category, String paymentMethod, String search, Pageable pageable) {
         Specification<Transaction> spec = Specification.where(TransactionSpecification.isDebit())
                 .and(TransactionSpecification.isNotPenyaluran())
-                .and(TransactionSpecification.hasAgenId(agenId))
                 .and(TransactionSpecification.hasChannel("POS"));
+
+        if (agenId != null) {
+            spec = spec.and(TransactionSpecification.hasAgenId(agenId));
+        }
 
         if (eventId != null) {
             spec = spec.and(TransactionSpecification.hasEventId(eventId));
         }
+
         if (startDate != null && endDate != null) {
             spec = spec.and(TransactionSpecification.transactionDateBetween(startDate.atStartOfDay(), endDate.atTime(LocalTime.MAX)));
         }
+
         if (category != null && !category.isEmpty()) {
             spec = spec.and(TransactionSpecification.hasCategory(category));
         }
+
         if (paymentMethod != null && !paymentMethod.isEmpty()) {
             spec = spec.and(TransactionSpecification.hasPaymentMethod(paymentMethod));
+        }
+        
+        if (search != null && !search.isEmpty()) {
+            spec = spec.and(TransactionSpecification.searchByNameOrPhone(search));
         }
 
         Page<Transaction> transactions = transactionRepository.findAll(spec, pageable);

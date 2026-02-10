@@ -56,4 +56,15 @@ public class TransactionSpecification {
             return criteriaBuilder.equal(root.get("channel"), channel);
         };
     }
+
+    public static Specification<Transaction> searchByNameOrPhone(String search) {
+        return (root, query, criteriaBuilder) -> {
+            if (search == null || search.isEmpty()) return null;
+            String searchPattern = "%" + search.toLowerCase() + "%";
+            return criteriaBuilder.or(
+                    criteriaBuilder.like(criteriaBuilder.lower(root.get("username")), searchPattern),
+                    criteriaBuilder.like(criteriaBuilder.lower(root.get("phoneNumber")), searchPattern)
+            );
+        };
+    }
 }
