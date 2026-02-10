@@ -118,6 +118,9 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long>,
     @Query("SELECT COALESCE(SUM(t.debit), 0) FROM Transaction t WHERE t.agenId = :agenId AND t.channel = 'POS' AND t.penyaluran = false")
     Double getTotalDonationByAgenId(@Param("agenId") Long agenId);
 
+    @Query("SELECT COALESCE(SUM(t.debit), 0) FROM Transaction t WHERE t.agenId = :agenId AND t.channel = 'POS' AND t.penyaluran = false AND t.transactionDate BETWEEN :startDate AND :endDate")
+    Double getTotalDonationByAgenIdAndDateRange(@Param("agenId") Long agenId, @Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
+
     @Query("select COALESCE(count(t.phoneNumber), 0.0) from Transaction t where t.dskl is not null and t.debit != 0 AND t.penyaluran = false")
     long getTotalDonaturDSKL();
 

@@ -1,9 +1,11 @@
 package com.lazis.lazissultanagung.service;
 
 import com.lazis.lazissultanagung.dto.request.AgenRequest;
+import com.lazis.lazissultanagung.dto.response.AgenResponse;
 import com.lazis.lazissultanagung.exception.BadRequestException;
 import com.lazis.lazissultanagung.model.Agen;
 import com.lazis.lazissultanagung.repository.AgenRepository;
+import com.lazis.lazissultanagung.repository.TransactionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -12,12 +14,16 @@ import org.springframework.stereotype.Service;
 
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class AgenServiceImpl implements AgenService {
 
     @Autowired
     private AgenRepository agenRepository;
+
+    @Autowired
+    private TransactionRepository transactionRepository;
 
     @Autowired
     private PasswordEncoder encoder;
@@ -100,7 +106,21 @@ public class AgenServiceImpl implements AgenService {
     }
 
     @Override
-    public List<Agen> getAllAgen() {
-        return agenRepository.findAll();
+    public List<AgenResponse> getAllAgen() {
+        List<Agen> agens = agenRepository.findAll();
+        return agens.stream().map(agen -> {
+            Double currentAmount = transactionRepository.getTotalDonationByAgenId(agen.getId());
+            return new AgenResponse(
+                agen.getId(),
+                agen.getUsername(),
+                agen.getPhoneNumber(),
+                agen.getEmail(),
+                agen.getAddress(),
+                agen.getCreatedAt(),
+                agen.getUpdatedAt(),
+                agen.getTargetAmount(),
+                currentAmount
+            );
+        }).collect(Collectors.toList());
     }
 }

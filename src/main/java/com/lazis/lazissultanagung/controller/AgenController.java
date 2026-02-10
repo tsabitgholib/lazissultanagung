@@ -1,6 +1,7 @@
 package com.lazis.lazissultanagung.controller;
 
 import com.lazis.lazissultanagung.dto.request.AgenRequest;
+import com.lazis.lazissultanagung.dto.response.AgenResponse;
 import com.lazis.lazissultanagung.model.Agen;
 import com.lazis.lazissultanagung.service.AgenService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,7 +47,7 @@ public class AgenController {
     }
 
     @GetMapping("/get-all")
-    public ResponseEntity<List<Agen>> getAllAgen() {
+    public ResponseEntity<List<AgenResponse>> getAllAgen() {
         return ResponseEntity.ok(agenService.getAllAgen());
     }
 }

@@ -15,6 +15,7 @@ public class PosDashboardResponse {
     private List<PaymentMethodSummary> paymentMethodSummary;
     private List<EventSummary> eventSummary;
     private TargetSummary targetSummary;
+    private Double totalAmountToday;
 
     @Data
     @AllArgsConstructor

@@ -452,7 +452,12 @@ public class PosServiceImpl implements PosService {
         
         PosDashboardResponse.TargetSummary targetSummary = new PosDashboardResponse.TargetSummary(target, currentTotal, percentage);
 
-        return new PosDashboardResponse(categoryNominalSummaries, categoryCountSummaries, paymentSummaries, eventSummaries, targetSummary);
+        // Total Amount Today
+        LocalDateTime startOfDay = LocalDateTime.now().with(LocalTime.MIN);
+        LocalDateTime endOfDay = LocalDateTime.now().with(LocalTime.MAX);
+        Double totalAmountToday = transactionRepository.getTotalDonationByAgenIdAndDateRange(agenId, startOfDay, endOfDay);
+
+        return new PosDashboardResponse(categoryNominalSummaries, categoryCountSummaries, paymentSummaries, eventSummaries, targetSummary, totalAmountToday);
     }
 
     private PosHistoryResponse mapTransactionToHistoryResponse(Transaction transaction) {
