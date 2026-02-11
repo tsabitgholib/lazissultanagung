@@ -98,7 +98,14 @@ public class LaporanAktivitasInfakController {
                 if (response.containsKey(key) && response.get(key) != null) {
                     saldoAwalDanaZakat = (double) response.get(key);
                 } else {
-                    saldoAwalDanaZakat = 0.0; // Default jika tidak ditemukan
+                    // Cek database saldo akhir bulan sebelumnya jika tidak ada di response map
+                    LocalDate prevDate = currentDate.minusMonths(1);
+                    Optional<SaldoAkhir> prevSaldoAkhir = saldoAkhirRepository.findByCoaAndMonthAndYear(
+                            coaRepository.findById(46L).orElse(null),
+                            prevDate.getMonthValue(),
+                            prevDate.getYear()
+                    );
+                    saldoAwalDanaZakat = prevSaldoAkhir.map(SaldoAkhir::getSaldoAkhir).orElse(0.0);
                 }
             }
 
