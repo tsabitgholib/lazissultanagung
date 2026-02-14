@@ -50,6 +50,23 @@ public class PosController {
         return ResponseEntity.ok(history);
     }
 
+    @GetMapping("/history-recap-admin")
+    public ResponseEntity<List<PosHistoryResponse>> getPosHistoryList(
+            @RequestParam(required = false) Long eventId,
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String paymentMethod,
+            @RequestParam(required = false) String search,
+            Authentication authentication) {
+
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        Long agenId = userDetails.getId();
+
+        List<PosHistoryResponse> history = posService.getPosHistoryList(agenId, eventId, startDate, endDate, category, paymentMethod, search);
+        return ResponseEntity.ok(history);
+    }
+
     @GetMapping("/dashboard")
     public ResponseEntity<PosDashboardResponse> getPosDashboard(Authentication authentication) {
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();

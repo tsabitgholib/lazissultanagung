@@ -168,7 +168,9 @@ public class PosServiceImpl implements PosService {
         LocalDateTime transactionDateTime = request.getDate().atTime(LocalTime.now(ZoneId.of("Asia/Jakarta")));
 
         String paymentMethod = request.getPaymentMethod();
-        boolean isTemporary = paymentMethod != null && (paymentMethod.equalsIgnoreCase("transfer") || paymentMethod.equalsIgnoreCase("qris"));
+        boolean isTemporary = paymentMethod != null
+                && (paymentMethod.equalsIgnoreCase("transfer") || paymentMethod.equalsIgnoreCase("qris"))
+                && "POS".equalsIgnoreCase(channel);
 
         // Check for Transfer or QRIS payment method
         if (isTemporary) {
@@ -530,7 +532,7 @@ public class PosServiceImpl implements PosService {
             String[] headers = {
                 "Nama", "No HP", "Email", "Alamat", "Nominal", "Keterangan",
                 "Tanggal (yyyy-MM-dd)", "Kategori (zakat/infak/dskl/campaign)", 
-                "ID Sub Kategori", "Metode Pembayaran (TUNAI/TRANSFER/QRIS AGEN)"
+                "ID Sub Kategori", "ID Event", "Metode Pembayaran (TUNAI/TRANSFER/QRIS)"
             };
 
             for (int i = 0; i < headers.length; i++) {
@@ -551,7 +553,8 @@ public class PosServiceImpl implements PosService {
             exampleRow.createCell(6).setCellValue("2026-02-14");
             exampleRow.createCell(7).setCellValue("infak");
             exampleRow.createCell(8).setCellValue(1);
-            exampleRow.createCell(9).setCellValue("TUNAI");
+            exampleRow.createCell(9).setCellValue(2);
+            exampleRow.createCell(10).setCellValue("TUNAI");
 
             workbook.write(out);
             return out.toByteArray();
@@ -605,7 +608,15 @@ public class PosServiceImpl implements PosService {
                     request.setCategoryId(Long.parseLong(categoryIdStr));
                 }
 
-                request.setPaymentMethod(getCellValueAsString(row.getCell(9)));
+                String eventIdStr = getCellValueAsString(row.getCell(9));
+                if (eventIdStr != null && !eventIdStr.isEmpty()) {
+                    if (eventIdStr.contains(".")) {
+                        eventIdStr = eventIdStr.substring(0, eventIdStr.indexOf("."));
+                    }
+                    request.setEventId(Long.parseLong(eventIdStr));
+                }
+
+                request.setPaymentMethod(getCellValueAsString(row.getCell(10)));
 
                 // Reuse existing createPosTransaction logic
                 createPosTransaction(request, agenId);
