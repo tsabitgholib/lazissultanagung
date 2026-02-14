@@ -25,4 +25,4 @@ public interface PosService {
     void importTransactionsFromExcel(MultipartFile file, Long agenId);
     List<PosHistoryResponse> getDistinctDonaturPos(String search);
 }
-}
+
