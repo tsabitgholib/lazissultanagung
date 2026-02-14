@@ -220,4 +220,11 @@ Double sumByCoaIdsAndDateRange(
         @Param("endDate") LocalDateTime endDate
 );
 
+    @Query("SELECT t FROM Transaction t WHERE t.transactionId IN (" +
+            "SELECT MAX(t2.transactionId) FROM Transaction t2 " +
+            "WHERE t2.channel = 'POS' AND t2.debit > 0 " +
+            "AND (:search IS NULL OR :search = '' OR LOWER(t2.username) LIKE LOWER(CONCAT('%', :search, '%')) OR t2.phoneNumber LIKE CONCAT('%', :search, '%')) " +
+            "GROUP BY t2.username" +
+            ") ORDER BY t.username ASC")
+    List<Transaction> findDistinctDonaturPos(@Param("search") String search);
 }

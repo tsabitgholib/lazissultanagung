@@ -16,10 +16,17 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.web.multipart.MultipartFile;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.Iterator;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -75,16 +82,13 @@ public class PosServiceImpl implements PosService {
         if (request.getCategoryType() == null || request.getCategoryId() == null) {
             throw new BadRequestException("Kategori dan Sub Kategori harus diisi");
         }
-        if (request.getEventId() == null) {
-            throw new BadRequestException("Event ID harus diisi");
-        }
 
         // Generate Nomor Bukti
         Integer lastTransactionNumber = transactionRepository.findLastTransactionNumber();
         int newTransactionNumber = (lastTransactionNumber == null ? 1 : lastTransactionNumber + 1);
         String transactionNumberFormatted = String.valueOf(newTransactionNumber);
         String staticPart = "LAZ";
-        String datePart = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM/yyyy"));
+        String datePart = LocalDateTime.now(ZoneId.of("Asia/Jakarta")).format(DateTimeFormatter.ofPattern("MM/yyyy"));
         String nomorBukti = transactionNumberFormatted + "/" + staticPart + "/" + datePart;
 
         String imageFileName = null;
@@ -142,9 +146,9 @@ public class PosServiceImpl implements PosService {
                 Campaign campaign = campaignRepository.findById(request.getCategoryId())
                         .orElseThrow(() -> new BadRequestException("Campaign not found"));
                 
-                // Hardcode COA 20 (Debit) dan 21 (Credit)
-                coaDebit = coaRepository.findById(20L).orElseThrow(() -> new BadRequestException("COA ID 20 not found"));
-                coaKredit = coaRepository.findById(21L).orElseThrow(() -> new BadRequestException("COA ID 21 not found"));
+                // Hardcode COA 8 (Debit) dan 73 (Credit)
+                coaDebit = coaRepository.findById(8L).orElseThrow(() -> new BadRequestException("COA ID 8 not found"));
+                coaKredit = coaRepository.findById(73L).orElseThrow(() -> new BadRequestException("COA ID 73 not found"));
                 categoryEntity = campaign;
                 subCategoryName = campaign.getCampaignName();
                 
@@ -159,7 +163,7 @@ public class PosServiceImpl implements PosService {
             throw new BadRequestException("COA Debit atau Kredit belum dikonfigurasi untuk kategori ini");
         }
 
-        LocalDateTime transactionDateTime = request.getDate().atTime(LocalTime.now());
+        LocalDateTime transactionDateTime = request.getDate().atTime(LocalTime.now(ZoneId.of("Asia/Jakarta")));
 
         String paymentMethod = request.getPaymentMethod();
         boolean isTemporary = paymentMethod != null && (paymentMethod.equalsIgnoreCase("transfer") || paymentMethod.equalsIgnoreCase("qris"));
@@ -168,7 +172,7 @@ public class PosServiceImpl implements PosService {
         if (isTemporary) {
             // Generate temporary nomor bukti
             // Format: TMP-yyyyMMddHHmmss-Random3Digits
-            String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+            String timestamp = LocalDateTime.now(ZoneId.of("Asia/Jakarta")).format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
             String randomSuffix = String.format("%03d", (int) (Math.random() * 1000));
             String tempNomorBukti = "TMP-" + timestamp + "-" + randomSuffix;
 
@@ -463,11 +467,140 @@ public class PosServiceImpl implements PosService {
         PosDashboardResponse.TargetSummary targetSummary = new PosDashboardResponse.TargetSummary(target, currentTotal, percentage);
 
         // Total Amount Today
-        LocalDateTime startOfDay = LocalDateTime.now().with(LocalTime.MIN);
-        LocalDateTime endOfDay = LocalDateTime.now().with(LocalTime.MAX);
+        LocalDateTime startOfDay = LocalDateTime.now(ZoneId.of("Asia/Jakarta")).with(LocalTime.MIN);
+        LocalDateTime endOfDay = LocalDateTime.now(ZoneId.of("Asia/Jakarta")).with(LocalTime.MAX);
         Double totalAmountToday = transactionRepository.getTotalDonationByAgenIdAndDateRange(agenId, startOfDay, endOfDay);
 
         return new PosDashboardResponse(categoryNominalSummaries, categoryCountSummaries, paymentSummaries, eventSummaries, targetSummary, totalAmountToday);
+    }
+
+    @Override
+    public byte[] downloadImportTemplate() {
+        try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Sheet sheet = workbook.createSheet("Import Transaksi");
+
+            // Header style
+            CellStyle headerStyle = workbook.createCellStyle();
+            Font font = workbook.createFont();
+            font.setBold(true);
+            headerStyle.setFont(font);
+
+            // Create headers
+            Row headerRow = sheet.createRow(0);
+            String[] headers = {
+                "Nama", "No HP", "Email", "Alamat", "Nominal", "Keterangan",
+                "Tanggal (yyyy-MM-dd)", "Kategori (zakat/infak/dskl/campaign)", 
+                "ID Sub Kategori", "Metode Pembayaran (tunai/transfer/qris)"
+            };
+
+            for (int i = 0; i < headers.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(headers[i]);
+                cell.setCellStyle(headerStyle);
+                sheet.autoSizeColumn(i);
+            }
+
+            // Example data row
+            Row exampleRow = sheet.createRow(1);
+            exampleRow.createCell(0).setCellValue("Donatur 1");
+            exampleRow.createCell(1).setCellValue("08123456789");
+            exampleRow.createCell(2).setCellValue("donatur@mail.com");
+            exampleRow.createCell(3).setCellValue("Semarang");
+            exampleRow.createCell(4).setCellValue(100000);
+            exampleRow.createCell(5).setCellValue("Infaq Jumat");
+            exampleRow.createCell(6).setCellValue("2026-02-14");
+            exampleRow.createCell(7).setCellValue("infak");
+            exampleRow.createCell(8).setCellValue(1);
+            exampleRow.createCell(9).setCellValue("tunai");
+
+            workbook.write(out);
+            return out.toByteArray();
+        } catch (IOException e) {
+            throw new RuntimeException("Gagal membuat template excel", e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void importTransactionsFromExcel(MultipartFile file, Long agenId) {
+        try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
+            Sheet sheet = workbook.getSheetAt(0);
+            Iterator<Row> rows = sheet.iterator();
+
+            // Skip header
+            if (rows.hasNext()) {
+                rows.next();
+            }
+
+            while (rows.hasNext()) {
+                Row row = rows.next();
+                if (isRowEmpty(row)) continue;
+
+                PosTransactionRequest request = new PosTransactionRequest();
+                request.setName(getCellValueAsString(row.getCell(0)));
+                request.setPhoneNumber(getCellValueAsString(row.getCell(1)));
+                request.setEmail(getCellValueAsString(row.getCell(2)));
+                request.setAddress(getCellValueAsString(row.getCell(3)));
+                
+                String nominalStr = getCellValueAsString(row.getCell(4));
+                if (nominalStr != null && !nominalStr.isEmpty()) {
+                    request.setAmount(Double.parseDouble(nominalStr));
+                }
+
+                request.setDescription(getCellValueAsString(row.getCell(5)));
+
+                String dateStr = getCellValueAsString(row.getCell(6));
+                if (dateStr != null && !dateStr.isEmpty()) {
+                    request.setDate(LocalDate.parse(dateStr));
+                }
+
+                request.setCategoryType(getCellValueAsString(row.getCell(7)));
+                
+                String categoryIdStr = getCellValueAsString(row.getCell(8));
+                if (categoryIdStr != null && !categoryIdStr.isEmpty()) {
+                    if (categoryIdStr.contains(".")) {
+                        categoryIdStr = categoryIdStr.substring(0, categoryIdStr.indexOf("."));
+                    }
+                    request.setCategoryId(Long.parseLong(categoryIdStr));
+                }
+
+                request.setPaymentMethod(getCellValueAsString(row.getCell(9)));
+
+                // Reuse existing createPosTransaction logic
+                createPosTransaction(request, agenId);
+            }
+        } catch (Exception e) {
+            throw new BadRequestException("Gagal import excel: " + e.getMessage());
+        }
+    }
+
+    private boolean isRowEmpty(Row row) {
+        if (row == null) return true;
+        for (int c = row.getFirstCellNum(); c < row.getLastCellNum(); c++) {
+            Cell cell = row.getCell(c);
+            if (cell != null && cell.getCellType() != CellType.BLANK)
+                return false;
+        }
+        return true;
+    }
+
+    private String getCellValueAsString(Cell cell) {
+        if (cell == null) return null;
+        switch (cell.getCellType()) {
+            case STRING:
+                return cell.getStringCellValue();
+            case NUMERIC:
+                if (DateUtil.isCellDateFormatted(cell)) {
+                    return cell.getLocalDateTimeCellValue().toLocalDate().toString();
+                }
+                return String.valueOf(cell.getNumericCellValue());
+            case BOOLEAN:
+                return String.valueOf(cell.getBooleanCellValue());
+            case FORMULA:
+                return cell.getCellFormula();
+            default:
+                return null;
+        }
     }
 
     private PosHistoryResponse mapTransactionToHistoryResponse(Transaction transaction) {
@@ -502,42 +635,11 @@ public class PosServiceImpl implements PosService {
         return response;
     }
 
-    private PosTransactionResponse mapTransactionToResponse(Transaction transaction) {
-        PosTransactionResponse response = new PosTransactionResponse();
-        response.setTanggal(transaction.getTransactionDate().toLocalDate());
-        response.setNama(transaction.getUsername());
-        response.setNoHp(transaction.getPhoneNumber());
-        response.setEmail(transaction.getEmail());
-        response.setAlamat(transaction.getAddress());
-        
-        String categoryType = transaction.getCategory();
-        String subCategoryName = "";
-        
-        if (transaction.getZakat() != null) subCategoryName = transaction.getZakat().getCategoryName();
-        else if (transaction.getInfak() != null) subCategoryName = transaction.getInfak().getCategoryName();
-        else if (transaction.getDskl() != null) subCategoryName = transaction.getDskl().getCategoryName();
-        else if (transaction.getCampaign() != null) subCategoryName = transaction.getCampaign().getCampaignName();
-        
-        List<DonationDetailDto> donationDetails = new ArrayList<>();
-        String[] categories = {"zakat", "infak", "dskl", "campaign"};
-
-        for (String cat : categories) {
-            DonationDetailDto detail = new DonationDetailDto();
-            detail.setKategori(cat);
-            
-            if (cat.equalsIgnoreCase(categoryType)) {
-                detail.setSubKategori(subCategoryName);
-                detail.setNominal(transaction.getDebit());
-            } else {
-                detail.setSubKategori("");
-                detail.setNominal(0.0);
-            }
-            donationDetails.add(detail);
-        }
-        
-        response.setDonasi(donationDetails);
-        response.setTerbilang(TerbilangUtil.terbilang(transaction.getDebit()));
-        
-        return response;
+    @Override
+    public List<PosHistoryResponse> getDistinctDonaturPos(String search) {
+        List<Transaction> transactions = transactionRepository.findDistinctDonaturPos(search);
+        return transactions.stream()
+                .map(this::mapTransactionToHistoryResponse)
+                .collect(Collectors.toList());
     }
 }

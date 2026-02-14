@@ -46,7 +46,7 @@ public class Transaction {
     private String paymentProofImage;
 
     @Column(nullable = false, updatable = false)
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:s")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+7")
     private LocalDateTime transactionDate;
 
     private String channel;

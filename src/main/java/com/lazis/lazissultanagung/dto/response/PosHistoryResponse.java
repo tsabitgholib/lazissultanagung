@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 public class PosHistoryResponse {
     private Long id;
     
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+7")
     private LocalDateTime tanggal;
     
     private String nomorBukti;

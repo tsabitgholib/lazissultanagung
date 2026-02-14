@@ -21,6 +21,9 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.util.List;
 
+import org.springframework.http.HttpHeaders;
+import org.springframework.web.multipart.MultipartFile;
+
 @CrossOrigin(origins= {"*"}, maxAge = 4800, allowCredentials = "false" )
 @RestController
 @RequestMapping("api/pos")
@@ -81,5 +84,34 @@ public class PosController {
         } catch (BadRequestException e) {
             return ResponseEntity.badRequest().body(new ResponseMessage(false, e.getMessage()));
         }
+    }
+
+    @GetMapping("/download-template")
+    public ResponseEntity<byte[]> downloadTemplate() {
+        byte[] excelContent = posService.downloadImportTemplate();
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=template_import_transaksi_pos.xlsx")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(excelContent);
+    }
+
+    @PostMapping(value = "/import-excel", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> importExcel(@RequestParam("file") MultipartFile file, Authentication authentication) {
+        try {
+            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+            Long agenId = userDetails.getId();
+            posService.importTransactionsFromExcel(file, agenId);
+            return ResponseEntity.ok(new ResponseMessage(true, "Import transaksi berhasil"));
+        } catch (BadRequestException e) {
+            return ResponseEntity.badRequest().body(new ResponseMessage(false, e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(new ResponseMessage(false, "Terjadi kesalahan: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/search-donatur")
+    public ResponseEntity<List<PosHistoryResponse>> getDistinctDonaturPos(@RequestParam(required = false) String search) {
+        List<PosHistoryResponse> donatur = posService.getDistinctDonaturPos(search);
+        return ResponseEntity.ok(donatur);
     }
 }

@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -84,7 +85,7 @@ public class TransactionServiceImpl implements TransactionService {
 //        // Format nomor bukti
 //        String transactionNumberFormatted = String.format("%03d", newTransactionNumber);  // Format angka menjadi 001, 002, dst.
 //        String staticPart = "LAZ";
-//        String datePart = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM/yyyy"));  // Format MM/yyyy untuk bulan dan tahun
+//        String datePart = LocalDateTime.now(ZoneId.of("Asia/Jakarta")).format(DateTimeFormatter.ofPattern("MM/yyyy"));  // Format MM/yyyy untuk bulan dan tahun
 //        String nomorBukti = transactionNumberFormatted + "/" + staticPart + "/" + datePart;
 //
 //        // Transaksi Debit
@@ -270,7 +271,7 @@ public class TransactionServiceImpl implements TransactionService {
             // Format nomor bukti
             String transactionNumberFormatted = String.valueOf(newTransactionNumber);
             String staticPart = "LAZ";
-            String datePart = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM/yyyy"));
+            String datePart = LocalDateTime.now(ZoneId.of("Asia/Jakarta")).format(DateTimeFormatter.ofPattern("MM/yyyy"));
             String nomorBukti = transactionNumberFormatted + "/" + staticPart + "/" + datePart;
 
             boolean isPenyaluran = jurnalUmumRequest.isPenyaluran() ||
@@ -420,7 +421,7 @@ public class TransactionServiceImpl implements TransactionService {
         int newTransactionNumber = (lastTransactionNumber == null ? 1 : lastTransactionNumber + 1);
         String transactionNumberFormatted = String.valueOf(newTransactionNumber);
         String staticPart = "LAZ";
-        String datePart = LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM/yyyy"));
+        String datePart = LocalDateTime.now(ZoneId.of("Asia/Jakarta")).format(DateTimeFormatter.ofPattern("MM/yyyy"));
         String newNomorBukti = transactionNumberFormatted + "/" + staticPart + "/" + datePart;
 
         // Use a set to track processed categories to avoid double counting (since temp transactions come in pairs)

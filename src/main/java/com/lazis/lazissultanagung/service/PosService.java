@@ -11,6 +11,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import com.lazis.lazissultanagung.dto.response.PosDashboardResponse;
+import org.springframework.web.multipart.MultipartFile;
 
 public interface PosService {
     PosTransactionResponse createPosTransaction(PosTransactionRequest request, Long agenId);
@@ -18,4 +19,8 @@ public interface PosService {
     Page<PosHistoryResponse> getPosHistory(Long agenId, Long eventId, LocalDate startDate, LocalDate endDate, String category, String paymentMethod, String search, Pageable pageable);
 
     PosDashboardResponse getPosDashboard(Long agenId);
+
+    byte[] downloadImportTemplate();
+    void importTransactionsFromExcel(MultipartFile file, Long agenId);
+    List<PosHistoryResponse> getDistinctDonaturPos(String search);
 }

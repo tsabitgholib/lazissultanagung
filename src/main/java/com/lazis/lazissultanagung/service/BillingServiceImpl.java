@@ -12,6 +12,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.Random;
 
 @Service
@@ -104,7 +106,7 @@ public class BillingServiceImpl implements BillingService {
 
         // Set sisa data tagihan
         billing.setBillingAmount(transactionRequest.getTransactionAmount());
-        billing.setBillingDate(LocalDateTime.now());
+        billing.setBillingDate(LocalDateTime.now(ZoneId.of("Asia/Jakarta")));
         billing.setCategory(categoryType);
         billing.setMethod(transactionRequest.getMethod());
         billing.setSuccess(false);
