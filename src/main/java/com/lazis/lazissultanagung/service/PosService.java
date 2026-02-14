@@ -17,10 +17,12 @@ public interface PosService {
     PosTransactionResponse createPosTransaction(PosTransactionRequest request, Long agenId);
     
     Page<PosHistoryResponse> getPosHistory(Long agenId, Long eventId, LocalDate startDate, LocalDate endDate, String category, String paymentMethod, String search, Pageable pageable);
+    java.util.List<PosHistoryResponse> getPosHistoryList(Long agenId, Long eventId, LocalDate startDate, LocalDate endDate, String category, String paymentMethod, String search);
 
     PosDashboardResponse getPosDashboard(Long agenId);
 
     byte[] downloadImportTemplate();
     void importTransactionsFromExcel(MultipartFile file, Long agenId);
     List<PosHistoryResponse> getDistinctDonaturPos(String search);
+}
 }

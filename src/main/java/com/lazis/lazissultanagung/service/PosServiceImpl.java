@@ -96,6 +96,8 @@ public class PosServiceImpl implements PosService {
             imageFileName = fileStorageService.saveFile(request.getImage());
         }
 
+        String channel = request.getChannel() != null && !request.getChannel().isEmpty() ? request.getChannel() : "POS";
+
         Coa coaDebit = null;
         Coa coaKredit = null;
         Object categoryEntity = null;
@@ -190,7 +192,7 @@ public class PosServiceImpl implements PosService {
             tempDebit.setCoa(coaDebit);
             tempDebit.setTransactionAmount(request.getAmount());
             tempDebit.setMethod(paymentMethod);
-            tempDebit.setChannel("POS");
+            tempDebit.setChannel(channel);
             tempDebit.setSuccess(true); // Or false if pending validation? User said same as transaction, usually true implies payment successful.
             tempDebit.setCategory(request.getCategoryType());
             tempDebit.setAgenId(agenId);
@@ -213,7 +215,7 @@ public class PosServiceImpl implements PosService {
             tempKredit.setCoa(coaKredit);
             tempKredit.setTransactionAmount(request.getAmount());
             tempKredit.setMethod(paymentMethod);
-            tempKredit.setChannel("POS");
+            tempKredit.setChannel(channel);
             tempKredit.setSuccess(true);
             tempKredit.setCategory(request.getCategoryType());
             tempKredit.setAgenId(agenId);
@@ -268,7 +270,7 @@ public class PosServiceImpl implements PosService {
         transactionDebit.setNomorBukti(nomorBukti);
         transactionDebit.setTransactionAmount(request.getAmount());
         transactionDebit.setMethod(request.getPaymentMethod());
-        transactionDebit.setChannel("POS");
+        transactionDebit.setChannel(channel);
         transactionDebit.setSuccess(true);
         transactionDebit.setCategory(request.getCategoryType());
         transactionDebit.setAgenId(agenId);
@@ -294,7 +296,7 @@ public class PosServiceImpl implements PosService {
         transactionKredit.setNomorBukti(nomorBukti);
         transactionKredit.setTransactionAmount(request.getAmount());
         transactionKredit.setMethod(request.getPaymentMethod());
-        transactionKredit.setChannel("POS");
+        transactionKredit.setChannel(channel);
         transactionKredit.setSuccess(true);
         transactionKredit.setCategory(request.getCategoryType());
         transactionKredit.setAgenId(agenId);
@@ -407,6 +409,44 @@ public class PosServiceImpl implements PosService {
     }
 
     @Override
+    public java.util.List<PosHistoryResponse> getPosHistoryList(Long agenId, Long eventId, LocalDate startDate, LocalDate endDate, String category, String paymentMethod, String search) {
+        Specification<Transaction> spec = Specification.where(TransactionSpecification.isDebit())
+                .and(TransactionSpecification.isNotPenyaluran())
+                .and(TransactionSpecification.hasChannel("POS"));
+
+        if (agenId != null) {
+            spec = spec.and(TransactionSpecification.hasAgenId(agenId));
+        }
+
+        if (eventId != null) {
+            spec = spec.and(TransactionSpecification.hasEventId(eventId));
+        }
+
+        if (startDate != null && endDate != null) {
+            spec = spec.and(TransactionSpecification.transactionDateBetween(startDate.atStartOfDay(), endDate.atTime(LocalTime.MAX)));
+        }
+
+        if (category != null && !category.isEmpty()) {
+            spec = spec.and(TransactionSpecification.hasCategory(category));
+        }
+
+        if (paymentMethod != null && !paymentMethod.isEmpty()) {
+            spec = spec.and(TransactionSpecification.hasPaymentMethod(paymentMethod));
+        }
+        
+        if (search != null && !search.isEmpty()) {
+            spec = spec.and(TransactionSpecification.searchByNameOrPhone(search));
+        }
+
+        java.util.List<Transaction> transactions = transactionRepository.findAll(spec, org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.ASC, "transactionDate"));
+        java.util.List<PosHistoryResponse> result = new java.util.ArrayList<>();
+        for (Transaction t : transactions) {
+            result.add(mapTransactionToHistoryResponse(t));
+        }
+        return result;
+    }
+
+    @Override
     public PosDashboardResponse getPosDashboard(Long agenId) {
         // Category Summary
         List<Object[]> categoryData = transactionRepository.getCategorySummaryByAgenId(agenId);
@@ -490,7 +530,7 @@ public class PosServiceImpl implements PosService {
             String[] headers = {
                 "Nama", "No HP", "Email", "Alamat", "Nominal", "Keterangan",
                 "Tanggal (yyyy-MM-dd)", "Kategori (zakat/infak/dskl/campaign)", 
-                "ID Sub Kategori", "Metode Pembayaran (tunai/transfer/qris)"
+                "ID Sub Kategori", "Metode Pembayaran (TUNAI/TRANSFER/QRIS AGEN)"
             };
 
             for (int i = 0; i < headers.length; i++) {
@@ -511,7 +551,7 @@ public class PosServiceImpl implements PosService {
             exampleRow.createCell(6).setCellValue("2026-02-14");
             exampleRow.createCell(7).setCellValue("infak");
             exampleRow.createCell(8).setCellValue(1);
-            exampleRow.createCell(9).setCellValue("tunai");
+            exampleRow.createCell(9).setCellValue("TUNAI");
 
             workbook.write(out);
             return out.toByteArray();
@@ -537,10 +577,11 @@ public class PosServiceImpl implements PosService {
                 if (isRowEmpty(row)) continue;
 
                 PosTransactionRequest request = new PosTransactionRequest();
-                request.setName(getCellValueAsString(row.getCell(0)));
+                request.setName(toTitleCase(getCellValueAsString(row.getCell(0))));
                 request.setPhoneNumber(getCellValueAsString(row.getCell(1)));
                 request.setEmail(getCellValueAsString(row.getCell(2)));
                 request.setAddress(getCellValueAsString(row.getCell(3)));
+                request.setChannel("Teller");
                 
                 String nominalStr = getCellValueAsString(row.getCell(4));
                 if (nominalStr != null && !nominalStr.isEmpty()) {
@@ -635,6 +676,20 @@ public class PosServiceImpl implements PosService {
         return response;
     }
 
+    private String toTitleCase(String input) {
+        if (input == null || input.isBlank()) return input;
+        String[] parts = input.toLowerCase().trim().split("\\s+");
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < parts.length; i++) {
+            String p = parts[i];
+            if (p.length() > 0) {
+                sb.append(Character.toUpperCase(p.charAt(0)));
+                if (p.length() > 1) sb.append(p.substring(1));
+            }
+            if (i < parts.length - 1) sb.append(' ');
+        }
+        return sb.toString();
+    }
     @Override
     public List<PosHistoryResponse> getDistinctDonaturPos(String search) {
         List<Transaction> transactions = transactionRepository.findDistinctDonaturPos(search);

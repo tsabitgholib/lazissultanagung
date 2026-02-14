@@ -74,6 +74,20 @@ public class PosController {
         return ResponseEntity.ok(history);
     }
 
+    @GetMapping("/history-recap")
+    public ResponseEntity<List<PosHistoryResponse>> getPosHistoryByAgentIdList(
+            @RequestParam(required = false) Long agenId,
+            @RequestParam(required = false) Long eventId,
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String paymentMethod,
+            @RequestParam(required = false) String search) {
+        
+        List<PosHistoryResponse> history = posService.getPosHistoryList(agenId, eventId, startDate, endDate, category, paymentMethod, search);
+        return ResponseEntity.ok(history);
+    }
+
     @PostMapping(value = "/create-transaction", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> createPosTransaction(@ModelAttribute PosTransactionRequest request, Authentication authentication) {
         try {

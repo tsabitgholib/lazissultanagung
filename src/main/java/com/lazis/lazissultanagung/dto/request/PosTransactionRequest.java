@@ -13,6 +13,7 @@ public class PosTransactionRequest {
     private String phoneNumber;
     private String email;
     private String address;
+    private String channel;
     
     @JsonFormat(pattern = "yyyy-MM-dd")
     @DateTimeFormat(pattern = "yyyy-MM-dd")
