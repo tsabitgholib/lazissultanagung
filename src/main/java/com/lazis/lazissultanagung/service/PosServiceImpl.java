@@ -98,65 +98,71 @@ public class PosServiceImpl implements PosService {
 
         String channel = request.getChannel() != null && !request.getChannel().isEmpty() ? request.getChannel() : "POS";
 
+        String categoryType = request.getCategoryType().toLowerCase();
+        String paymentMethod = request.getPaymentMethod();
+        boolean isTemporary = paymentMethod != null
+                && (paymentMethod.equalsIgnoreCase("transfer") || paymentMethod.equalsIgnoreCase("qris agen"))
+                && "POS".equalsIgnoreCase(channel);
+
         Coa coaDebit = null;
         Coa coaKredit = null;
         Object categoryEntity = null;
         String subCategoryName = "";
 
-        // Tentukan COA berdasarkan kategori
-        String categoryType = request.getCategoryType().toLowerCase();
         switch (categoryType) {
-            case "zakat":
+            case "zakat": {
                 Zakat zakat = zakatRepository.findById(request.getCategoryId())
                         .orElseThrow(() -> new BadRequestException("Zakat category not found"));
                 coaDebit = zakat.getCoaDebit();
                 coaKredit = zakat.getCoaKredit();
                 categoryEntity = zakat;
                 subCategoryName = zakat.getCategoryName();
-                
-                // Update current amount
-                zakatRepository.updateZakatCurrentAmount(request.getCategoryId(), request.getAmount());
+                if (!isTemporary) {
+                    zakatRepository.updateZakatCurrentAmount(request.getCategoryId(), request.getAmount());
+                }
                 break;
-            case "infak":
+            }
+            case "infak": {
                 Infak infak = infakRepository.findById(request.getCategoryId())
                         .orElseThrow(() -> new BadRequestException("Infak category not found"));
                 coaDebit = infak.getCoaDebit();
                 coaKredit = infak.getCoaKredit();
                 categoryEntity = infak;
                 subCategoryName = infak.getCategoryName();
-                
-                // Update current amount
-                infakRepository.updateInfakCurrentAmount(request.getCategoryId(), request.getAmount());
+                if (!isTemporary) {
+                    infakRepository.updateInfakCurrentAmount(request.getCategoryId(), request.getAmount());
+                }
                 break;
-            case "dskl":
+            }
+            case "dskl": {
                 DSKL dskl = dsklRepository.findById(request.getCategoryId())
                         .orElseThrow(() -> new BadRequestException("DSKL category not found"));
                 coaDebit = dskl.getCoaDebit();
                 coaKredit = dskl.getCoaKredit();
                 categoryEntity = dskl;
                 subCategoryName = dskl.getCategoryName();
-                
-                // Update current amount
-                dsklRepository.updateDSKLCurrentAmount(request.getCategoryId(), request.getAmount());
+                if (!isTemporary) {
+                    dsklRepository.updateDSKLCurrentAmount(request.getCategoryId(), request.getAmount());
+                }
                 break;
-            case "wakaf":
+            }
+            case "wakaf": {
                 Wakaf wakaf = wakafRepository.findById(request.getCategoryId())
                         .orElseThrow(() -> new BadRequestException("Wakaf category not found"));
-                // Wakaf logic placeholder
-                 throw new BadRequestException("Kategori Wakaf belum didukung di POS");
-            case "campaign":
+                throw new BadRequestException("Kategori Wakaf belum didukung di POS");
+            }
+            case "campaign": {
                 Campaign campaign = campaignRepository.findById(request.getCategoryId())
                         .orElseThrow(() -> new BadRequestException("Campaign not found"));
-                
-                // Hardcode COA 8 (Debit) dan 73 (Credit)
                 coaDebit = coaRepository.findById(8L).orElseThrow(() -> new BadRequestException("COA ID 8 not found"));
                 coaKredit = coaRepository.findById(73L).orElseThrow(() -> new BadRequestException("COA ID 73 not found"));
                 categoryEntity = campaign;
                 subCategoryName = campaign.getCampaignName();
-                
-                // Update current amount
-                campaignRepository.updateCampaignCurrentAmount(request.getCategoryId(), request.getAmount());
+                if (!isTemporary) {
+                    campaignRepository.updateCampaignCurrentAmount(request.getCategoryId(), request.getAmount());
+                }
                 break;
+            }
             default:
                 throw new BadRequestException("Invalid category type: " + categoryType);
         }
@@ -167,15 +173,8 @@ public class PosServiceImpl implements PosService {
 
         LocalDateTime transactionDateTime = request.getDate().atTime(LocalTime.now(ZoneId.of("Asia/Jakarta")));
 
-        String paymentMethod = request.getPaymentMethod();
-        boolean isTemporary = paymentMethod != null
-                && (paymentMethod.equalsIgnoreCase("transfer") || paymentMethod.equalsIgnoreCase("qris"))
-                && "POS".equalsIgnoreCase(channel);
-
-        // Check for Transfer or QRIS payment method
         if (isTemporary) {
-            // Generate temporary nomor bukti
-            // Format: TMP-yyyyMMddHHmmss-Random3Digits
+  
             String timestamp = LocalDateTime.now(ZoneId.of("Asia/Jakarta")).format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
             String randomSuffix = String.format("%03d", (int) (Math.random() * 1000));
             String tempNomorBukti = "TMP-" + timestamp + "-" + randomSuffix;
@@ -195,7 +194,7 @@ public class PosServiceImpl implements PosService {
             tempDebit.setTransactionAmount(request.getAmount());
             tempDebit.setMethod(paymentMethod);
             tempDebit.setChannel(channel);
-            tempDebit.setSuccess(true); // Or false if pending validation? User said same as transaction, usually true implies payment successful.
+            tempDebit.setSuccess(true);
             tempDebit.setCategory(request.getCategoryType());
             tempDebit.setAgenId(agenId);
             tempDebit.setEventId(request.getEventId());
@@ -532,7 +531,7 @@ public class PosServiceImpl implements PosService {
             String[] headers = {
                 "Nama", "No HP", "Email", "Alamat", "Nominal", "Keterangan",
                 "Tanggal (yyyy-MM-dd)", "Kategori (zakat/infak/dskl/campaign)", 
-                "ID Sub Kategori", "ID Event", "Metode Pembayaran (TUNAI/TRANSFER/QRIS)"
+                "ID Sub Kategori", "ID Event", "Metode Pembayaran (TUNAI/TRANSFER/QRIS AGEN)"
             };
 
             for (int i = 0; i < headers.length; i++) {
