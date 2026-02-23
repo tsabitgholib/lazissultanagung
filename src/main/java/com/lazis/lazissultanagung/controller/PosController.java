@@ -6,6 +6,8 @@ import com.lazis.lazissultanagung.dto.response.PosHistoryResponse;
 import com.lazis.lazissultanagung.dto.response.PosTransactionResponse;
 import com.lazis.lazissultanagung.dto.response.ResponseMessage;
 import com.lazis.lazissultanagung.exception.BadRequestException;
+import com.lazis.lazissultanagung.model.Agen;
+import com.lazis.lazissultanagung.service.AgenService;
 import com.lazis.lazissultanagung.service.PosService;
 import com.lazis.lazissultanagung.service.UserDetailsImpl;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,14 +25,21 @@ import java.util.List;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.web.multipart.MultipartFile;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @CrossOrigin(origins= {"*"}, maxAge = 4800, allowCredentials = "false" )
 @RestController
 @RequestMapping("api/pos")
 public class PosController {
 
+    private static final Logger log = LoggerFactory.getLogger(PosController.class);
+
     @Autowired
     private PosService posService;
+    
+    @Autowired
+    private AgenService agenService;
 
     @GetMapping("/history")
     public ResponseEntity<Page<PosHistoryResponse>> getPosHistory(
@@ -43,8 +52,8 @@ public class PosController {
             @PageableDefault(sort = "transactionDate", direction = Sort.Direction.DESC) Pageable pageable,
             Authentication authentication) {
         
-        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        Long agenId = userDetails.getId();
+        Agen agen = agenService.getCurrentAgen();
+        Long agenId = agen.getId();
         
         Page<PosHistoryResponse> history = posService.getPosHistory(agenId, eventId, startDate, endDate, category, paymentMethod, search, pageable);
         return ResponseEntity.ok(history);
@@ -60,8 +69,8 @@ public class PosController {
             @RequestParam(required = false) String search,
             Authentication authentication) {
 
-        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        Long agenId = userDetails.getId();
+        Agen agen = agenService.getCurrentAgen();
+        Long agenId = agen.getId();
 
         List<PosHistoryResponse> history = posService.getPosHistoryList(agenId, eventId, startDate, endDate, category, paymentMethod, search);
         return ResponseEntity.ok(history);
@@ -69,8 +78,8 @@ public class PosController {
 
     @GetMapping("/dashboard")
     public ResponseEntity<PosDashboardResponse> getPosDashboard(Authentication authentication) {
-        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        Long agenId = userDetails.getId();
+        Agen agen = agenService.getCurrentAgen();
+        Long agenId = agen.getId();
         
         PosDashboardResponse dashboard = posService.getPosDashboard(agenId);
         return ResponseEntity.ok(dashboard);
@@ -108,8 +117,9 @@ public class PosController {
     @PostMapping(value = "/create-transaction", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> createPosTransaction(@ModelAttribute PosTransactionRequest request, Authentication authentication) {
         try {
-            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-            Long agenId = userDetails.getId();
+            Agen agen = agenService.getCurrentAgen();
+            Long agenId = agen.getId();
+            log.info("Creating POS transaction by agenId={}", agenId);
             PosTransactionResponse response = posService.createPosTransaction(request, agenId);
             return ResponseEntity.ok(response);
         } catch (BadRequestException e) {
@@ -129,8 +139,9 @@ public class PosController {
     @PostMapping(value = "/import-excel", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> importExcel(@RequestParam("file") MultipartFile file, Authentication authentication) {
         try {
-            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-            Long agenId = userDetails.getId();
+            Agen agen = agenService.getCurrentAgen();
+            Long agenId = agen.getId();
+            log.info("Importing POS transactions by agenId={}", agenId);
             posService.importTransactionsFromExcel(file, agenId);
             return ResponseEntity.ok(new ResponseMessage(true, "Import transaksi berhasil"));
         } catch (BadRequestException e) {
