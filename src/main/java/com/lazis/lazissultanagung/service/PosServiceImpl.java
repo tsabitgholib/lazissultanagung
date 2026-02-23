@@ -174,14 +174,9 @@ public class PosServiceImpl implements PosService {
         LocalDateTime transactionDateTime = request.getDate().atTime(LocalTime.now(ZoneId.of("Asia/Jakarta")));
 
         if (isTemporary) {
-  
-            String timestamp = LocalDateTime.now(ZoneId.of("Asia/Jakarta")).format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-            String randomSuffix = String.format("%03d", (int) (Math.random() * 1000));
-            String tempNomorBukti = "TMP-" + timestamp + "-" + randomSuffix;
-
             // Temporary Transaction Debit
             TemporaryTransaction tempDebit = new TemporaryTransaction();
-            tempDebit.setNomorBukti(tempNomorBukti);
+            tempDebit.setNomorBukti(nomorBukti);
             tempDebit.setTransactionDate(transactionDateTime);
             tempDebit.setUsername(request.getName());
             tempDebit.setPhoneNumber(request.getPhoneNumber());
@@ -204,7 +199,7 @@ public class PosServiceImpl implements PosService {
 
             // Temporary Transaction Credit
             TemporaryTransaction tempKredit = new TemporaryTransaction();
-            tempKredit.setNomorBukti(tempNomorBukti);
+            tempKredit.setNomorBukti(nomorBukti);
             tempKredit.setTransactionDate(transactionDateTime);
             tempKredit.setUsername(request.getName());
             tempKredit.setPhoneNumber(request.getPhoneNumber());
@@ -227,7 +222,7 @@ public class PosServiceImpl implements PosService {
 
             // Prepare Response (same as normal flow)
             PosTransactionResponse response = new PosTransactionResponse();
-            response.setNomorBukti(tempNomorBukti);
+            response.setNomorBukti(nomorBukti);
             response.setTanggal(request.getDate());
             response.setNama(request.getName());
             response.setNoHp(request.getPhoneNumber());

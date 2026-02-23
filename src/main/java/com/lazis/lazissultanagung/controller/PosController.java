@@ -102,14 +102,17 @@ public class PosController {
 
     @GetMapping("/history-recap")
     public ResponseEntity<List<PosHistoryResponse>> getPosHistoryByAgentIdList(
-            @RequestParam(required = false) Long agenId,
             @RequestParam(required = false) Long eventId,
             @RequestParam(required = false) LocalDate startDate,
             @RequestParam(required = false) LocalDate endDate,
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String paymentMethod,
-            @RequestParam(required = false) String search) {
-        
+            @RequestParam(required = false) String search,
+            Authentication authentication) {
+
+        Agen agen = agenService.getCurrentAgen();
+        Long agenId = agen.getId();
+
         List<PosHistoryResponse> history = posService.getPosHistoryList(agenId, eventId, startDate, endDate, category, paymentMethod, search);
         return ResponseEntity.ok(history);
     }

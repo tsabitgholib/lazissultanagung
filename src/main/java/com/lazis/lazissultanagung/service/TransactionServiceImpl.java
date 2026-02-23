@@ -416,14 +416,6 @@ public class TransactionServiceImpl implements TransactionService {
             throw new BadRequestException("Temporary transaction not found");
         }
 
-        // Generate Nomor Bukti (Reused logic)
-        Integer lastTransactionNumber = transactionRepository.findLastTransactionNumber();
-        int newTransactionNumber = (lastTransactionNumber == null ? 1 : lastTransactionNumber + 1);
-        String transactionNumberFormatted = String.valueOf(newTransactionNumber);
-        String staticPart = "LAZ";
-        String datePart = LocalDateTime.now(ZoneId.of("Asia/Jakarta")).format(DateTimeFormatter.ofPattern("MM/yyyy"));
-        String newNomorBukti = transactionNumberFormatted + "/" + staticPart + "/" + datePart;
-
         // Use a set to track processed categories to avoid double counting (since temp transactions come in pairs)
         Set<String> processedCategories = new HashSet<>();
 
@@ -449,7 +441,7 @@ public class TransactionServiceImpl implements TransactionService {
             transaction.setCoa(temp.getCoa());
             transaction.setDebit(temp.getDebit());
             transaction.setKredit(temp.getKredit());
-            transaction.setNomorBukti(newNomorBukti); // New Nomor Bukti
+            transaction.setNomorBukti(temp.getNomorBukti());
             transaction.setPenyaluran(temp.isPenyaluran());
             transaction.setCampaign(temp.getCampaign());
             transaction.setZakat(temp.getZakat());
@@ -473,9 +465,9 @@ public class TransactionServiceImpl implements TransactionService {
             // Usually revenue recognition is on Credit side.
             // Let's stick to updating once.
             
-            if (!processedCategories.contains(newNomorBukti)) {
+            if (!processedCategories.contains(temp.getNomorBukti())) {
                  updateCategoryAmount(temp);
-                 processedCategories.add(newNomorBukti);
+                 processedCategories.add(temp.getNomorBukti());
             }
         }
 

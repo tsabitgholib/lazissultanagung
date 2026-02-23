@@ -11,7 +11,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -219,6 +218,22 @@ Double sumByCoaIdsAndDateRange(
         @Param("startDate") LocalDateTime startDate,
         @Param("endDate") LocalDateTime endDate
 );
+
+    @Query("""
+    SELECT COALESCE(SUM(t.debit), 0.0)
+    FROM Transaction t
+    WHERE t.penyaluran = false
+      AND t.debit > 0
+      AND (t.zakat IS NOT NULL
+           OR t.infak IS NOT NULL
+           OR t.dskl IS NOT NULL
+           OR t.campaign IS NOT NULL)
+      AND t.transactionDate BETWEEN :startDate AND :endDate
+    """)
+    Double sumBaseForAmilByDateRange(
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate
+    );
 
     @Query("SELECT t FROM Transaction t WHERE t.transactionId IN (" +
             "SELECT MAX(t2.transactionId) FROM Transaction t2 " +
