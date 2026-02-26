@@ -4,7 +4,6 @@ import com.lazis.lazissultanagung.dto.request.DashboardImageRequest;
 import com.lazis.lazissultanagung.model.DashboardImage;
 import com.lazis.lazissultanagung.service.DashboardImageService;
 import com.lazis.lazissultanagung.service.DistributionService;
-import com.lazis.lazissultanagung.service.DonaturService;
 import com.lazis.lazissultanagung.service.TransactionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -20,9 +19,6 @@ public class DashboardImageController {
 
     @Autowired
     private DashboardImageService dashboardImageService;
-
-    @Autowired
-    private DonaturService donaturService;
 
     @Autowired
     private TransactionService transactionService;

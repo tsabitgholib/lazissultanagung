@@ -2,7 +2,7 @@ package com.lazis.lazissultanagung.dto.response;
 
 import lombok.Data;
 
-import java.util.List;
+
 
 @Data
 public class JwtResponse {

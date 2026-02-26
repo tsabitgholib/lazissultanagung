@@ -35,9 +35,6 @@ public class NewsServiceImpl implements NewsService {
     private AdminRepository adminRepository;
 
     @Autowired
-    private CloudinaryService cloudinaryService;
-
-    @Autowired
     private ModelMapper modelMapper;
 
     @Autowired

@@ -4,7 +4,6 @@ import com.lazis.lazissultanagung.dto.request.NewsRequest;
 import com.lazis.lazissultanagung.dto.response.NewsResponse;
 import com.lazis.lazissultanagung.dto.response.ResponseMessage;
 import com.lazis.lazissultanagung.exception.BadRequestException;
-import com.lazis.lazissultanagung.model.News;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

@@ -1,6 +1,5 @@
 package com.lazis.lazissultanagung.repository;
 
-import com.lazis.lazissultanagung.dto.response.CampaignResponse;
 import com.lazis.lazissultanagung.model.Admin;
 import com.lazis.lazissultanagung.model.Campaign;
 import jakarta.transaction.Transactional;
@@ -13,10 +12,10 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.Date;
+
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+
+
 
 @Repository
 public interface CampaignRepository extends JpaRepository<Campaign, Long> {

@@ -1,19 +1,14 @@
 package com.lazis.lazissultanagung.controller;
 
-import com.lazis.lazissultanagung.dto.response.CampaignResponse;
 import com.lazis.lazissultanagung.exception.BadRequestException;
-import com.lazis.lazissultanagung.model.Distribution;
 import com.lazis.lazissultanagung.model.NomZakat;
-import com.lazis.lazissultanagung.service.CampaignService;
-import com.lazis.lazissultanagung.service.DistributionService;
 import com.lazis.lazissultanagung.service.NomZakatService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+
 
 @CrossOrigin(origins= {"*"}, maxAge = 4800, allowCredentials = "false" )
 @RestController

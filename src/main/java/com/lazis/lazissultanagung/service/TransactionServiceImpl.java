@@ -13,6 +13,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -48,8 +49,6 @@ public class TransactionServiceImpl implements TransactionService {
     @Autowired
     private DonaturRepository donaturRepository;
 
-    @Autowired
-    private MessagesRepository messagesRepository;
 
     @Autowired
     private CoaRepository coaRepository;
@@ -57,11 +56,13 @@ public class TransactionServiceImpl implements TransactionService {
     @Autowired
     private AdminRepository adminRepository;
 
-    @Autowired
-    private ModelMapper modelMapper;
+
 
     @Autowired
     private TemporaryTransactionRepository temporaryTransactionRepository;
+
+    @Autowired
+    private AgenService agenService;
 
     @Override
     public Page<TransactionResponse> getAllTransaction(Integer month, Integer year, Pageable pageable) {
@@ -276,6 +277,13 @@ public class TransactionServiceImpl implements TransactionService {
 
             boolean isPenyaluran = jurnalUmumRequest.isPenyaluran() ||
                     jurnalUmumRequest.getCategoryType().equalsIgnoreCase("pengelola");
+            
+            long coaDebit = jurnalUmumRequest.getDebitDetails().get(0).getCoaId();
+            long coaKredit = jurnalUmumRequest.getKreditDetails().get(0).getCoaId();
+
+            if (coaDebit == 120 || coaKredit == 120) {
+                isPenyaluran = true;
+            }
 
             // Transaksi Debit
             Transaction transactionDebit = new Transaction();
@@ -507,19 +515,13 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     public List<PosHistoryResponse> getAllTemporaryTransactions() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        Long agenId = null;
+        Agen agen = agenService.getCurrentAgen();
+        Long agenId = agen.getId();
         
-        if (authentication != null && authentication.getPrincipal() instanceof UserDetailsImpl) {
-            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-            agenId = userDetails.getId();
-        }
-
         List<TemporaryTransaction> transactions;
         if (agenId != null) {
             transactions = temporaryTransactionRepository.findByAgenId(agenId);
         } else {
-            // Fallback or empty if no user logged in (though endpoint likely requires auth)
             transactions = new ArrayList<>();
         }
         

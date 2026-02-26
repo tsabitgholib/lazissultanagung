@@ -2,8 +2,6 @@ package com.lazis.lazissultanagung.controller;
 
 import com.lazis.lazissultanagung.dto.request.SaldoAwalRequest;
 import com.lazis.lazissultanagung.dto.response.CoaSaldoResponse;
-import com.lazis.lazissultanagung.model.Coa;
-import com.lazis.lazissultanagung.repository.CoaRepository;
 import com.lazis.lazissultanagung.service.SaldoAwalService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;

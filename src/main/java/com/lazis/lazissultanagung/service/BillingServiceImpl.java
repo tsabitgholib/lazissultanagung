@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.ArrayList;
 import java.util.Random;
 
 @Service
@@ -40,8 +39,6 @@ public class BillingServiceImpl implements BillingService {
     @Autowired
     private DonaturRepository donaturRepository;
 
-    @Autowired
-    private PasswordEncoder encoder;
 
     @Autowired
     private ModelMapper modelMapper;

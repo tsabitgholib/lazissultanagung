@@ -9,7 +9,6 @@ import com.lazis.lazissultanagung.exception.BadRequestException;
 import com.lazis.lazissultanagung.model.Admin;
 import com.lazis.lazissultanagung.model.Donatur;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.web.server.ResponseStatusException;
 
 public interface AuthService {
 

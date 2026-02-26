@@ -1,8 +1,6 @@
 package com.lazis.lazissultanagung.service;
 
 import com.lazis.lazissultanagung.dto.response.*;
-import com.lazis.lazissultanagung.model.Coa;
-import com.lazis.lazissultanagung.model.SaldoAwal;
 import com.lazis.lazissultanagung.model.Transaction;
 import com.lazis.lazissultanagung.repository.CoaRepository;
 import com.lazis.lazissultanagung.repository.SaldoAwalRepository;
@@ -12,11 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.ZoneId;
-import java.time.temporal.TemporalAdjusters;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 public class JurnalService {
@@ -25,11 +19,7 @@ public class JurnalService {
     @Autowired
     private TransactionRepository transactionRepository;
 
-    @Autowired
-    private CoaRepository coaRepository;
 
-    @Autowired
-    private SaldoAwalRepository saldoAwalRepository;
 
     public JurnalResponseWrapper getJurnalFilterDate(LocalDate startDate, LocalDate endDate) {
         // Konversi LocalDate ke LocalDateTime

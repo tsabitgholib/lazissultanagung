@@ -1,7 +1,6 @@
 package com.lazis.lazissultanagung.service;
 
 import com.lazis.lazissultanagung.model.PenerimaManfaat;
-import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;

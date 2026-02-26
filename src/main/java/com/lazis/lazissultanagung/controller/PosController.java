@@ -9,7 +9,6 @@ import com.lazis.lazissultanagung.exception.BadRequestException;
 import com.lazis.lazissultanagung.model.Agen;
 import com.lazis.lazissultanagung.service.AgenService;
 import com.lazis.lazissultanagung.service.PosService;
-import com.lazis.lazissultanagung.service.UserDetailsImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
