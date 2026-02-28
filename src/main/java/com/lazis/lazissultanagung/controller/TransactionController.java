@@ -49,17 +49,19 @@ public class TransactionController {
 
     @PostMapping("/jurnal-umum")
     public ResponseMessage createJurnalUmum(@RequestBody JurnalUmumRequest request) {
-        // ResponseMessage response = transactionService.createJurnalUmum(request);
+        ResponseMessage response = transactionService.createJurnalUmum(request);
         return new ResponseMessage(true, "Input Jurnal umum berhasil disimpan");
     }
 
-    @PostMapping("/validate-temp/{nomorBukti}")
-    public ResponseEntity<ResponseMessage> validateTemporaryTransaction(@PathVariable String nomorBukti) {
+    @PostMapping("/validate-temp")
+    public ResponseEntity<ResponseMessage> validateTemporaryTransaction(
+            @RequestParam("nomorBukti") String nomorBukti) {
         try {
             ResponseMessage response = transactionService.validateTemporaryTransaction(nomorBukti);
             return ResponseEntity.ok(response);
         } catch (BadRequestException e) {
-            return ResponseEntity.badRequest().body(new ResponseMessage(false, e.getMessage()));
+            return ResponseEntity.badRequest()
+                    .body(new ResponseMessage(false, e.getMessage()));
         }
     }
 

@@ -1,7 +1,11 @@
 package com.lazis.lazissultanagung.controller;
 
 import com.lazis.lazissultanagung.model.Coa;
+import com.lazis.lazissultanagung.model.SaldoAkhir;
+import com.lazis.lazissultanagung.model.SaldoAwal;
 import com.lazis.lazissultanagung.repository.CoaRepository;
+import com.lazis.lazissultanagung.repository.SaldoAkhirRepository;
+import com.lazis.lazissultanagung.repository.SaldoAwalRepository;
 import com.lazis.lazissultanagung.repository.TransactionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +22,7 @@ import java.time.Month;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @CrossOrigin(origins = { "*" }, maxAge = 4800, allowCredentials = "false")
 @RestController
@@ -29,6 +34,12 @@ public class LaporanAktivitasPengelolaController {
 
     @Autowired
     private TransactionRepository transactionRepository;
+
+    @Autowired
+    private SaldoAwalRepository saldoAwalRepository;
+
+    @Autowired
+    private SaldoAkhirRepository saldoAkhirRepository;
 
     @GetMapping("/pengelola-activity-report")
     public ResponseEntity<Map<String, Object>> getPengelolaActivityReport(
@@ -43,6 +54,74 @@ public class LaporanAktivitasPengelolaController {
 
         Map<String, Object> pendayagunaanPengelola = getPendayagunaanPengelola(month1, year1, month2, year2);
         response.put("Pendayagunaan Pengelola", pendayagunaanPengelola);
+
+        // Perhitungan Surplus/Defisit, Saldo Awal, dan Saldo Akhir
+        Map<String, Double> surplusDefisitPerBulan = new LinkedHashMap<>();
+        LocalDate startDate = LocalDate.of(year1, month1, 1);
+        LocalDate endDate = LocalDate.of(year2, month2, 1);
+        LocalDate current = startDate;
+
+        while (!current.isAfter(endDate)) {
+            String monthName = current.getMonth().name();
+            String keyTotal = "Total Bulan " + monthName + " " + current.getYear();
+
+            Double totalPenerimaan = (Double) penerimaan.get(keyTotal);
+            Double totalPendayagunaan = (Double) pendayagunaanPengelola.get(keyTotal);
+
+            if (totalPenerimaan == null) totalPenerimaan = 0.0;
+            if (totalPendayagunaan == null) totalPendayagunaan = 0.0;
+
+            double surplusDefisit = totalPenerimaan - totalPendayagunaan;
+            surplusDefisitPerBulan.put(monthName + " " + current.getYear(), surplusDefisit);
+
+            response.put("Surplus (Defisit) Dana " + monthName + " " + current.getYear(), surplusDefisit);
+            current = current.plusMonths(1);
+        }
+
+        // Saldo Awal Dana Pengelola (COA ID 50)
+        double saldoAwalDanaPengelola = 0.0;
+        current = startDate;
+
+        while (!current.isAfter(endDate)) {
+            int month = current.getMonthValue();
+            int year = current.getYear();
+
+            Optional<SaldoAwal> saldoAwalOpt = saldoAwalRepository.findSaldoAwalByCoaAndMonthAndYear(50L, month, year);
+            if (saldoAwalOpt.isPresent()) {
+                saldoAwalDanaPengelola = saldoAwalOpt.get().getSaldoAwal();
+            } else {
+                String keyPrev = "Saldo Akhir Dana " + current.minusMonths(1).getMonth().name() + " " + current.minusMonths(1).getYear();
+                if (response.containsKey(keyPrev) && response.get(keyPrev) != null) {
+                    saldoAwalDanaPengelola = (double) response.get(keyPrev);
+                } else {
+                    LocalDate prevDate = current.minusMonths(1);
+                    Optional<SaldoAkhir> prevSaldoAkhir = saldoAkhirRepository.findByCoaAndMonthAndYear(
+                            coaRepository.findById(50L).orElse(null),
+                            prevDate.getMonthValue(),
+                            prevDate.getYear()
+                    );
+                    saldoAwalDanaPengelola = prevSaldoAkhir.map(SaldoAkhir::getSaldoAkhir).orElse(0.0);
+                }
+            }
+
+            response.put("Saldo Awal Dana " + current.getMonth().name() + " " + year, saldoAwalDanaPengelola);
+
+            double surplusDefisit = surplusDefisitPerBulan.getOrDefault(current.getMonth().name() + " " + year, 0.0);
+            double saldoAkhirDanaPengelola = saldoAwalDanaPengelola + surplusDefisit;
+
+            // Simpan ke database
+            Optional<SaldoAkhir> existingSaldoAkhir = saldoAkhirRepository.findByCoaAndMonthAndYear(
+                    coaRepository.findById(50L).orElse(null), month, year);
+            SaldoAkhir entity = existingSaldoAkhir.orElse(new SaldoAkhir());
+            entity.setCoa(coaRepository.findById(50L).orElse(null));
+            entity.setMonth(month);
+            entity.setYear(year);
+            entity.setSaldoAkhir(saldoAkhirDanaPengelola);
+            saldoAkhirRepository.save(entity);
+
+            response.put("Saldo Akhir Dana " + current.getMonth().name() + " " + year, saldoAkhirDanaPengelola);
+            current = current.plusMonths(1);
+        }
 
         return ResponseEntity.ok(response);
     }
@@ -110,7 +189,7 @@ public class LaporanAktivitasPengelolaController {
                     (dskl * 0.20);
 
             Double bagiHasil = transactionRepository
-                    .sumDebitOrKreditByCoaIdAndParentIdAndDateRange(4404L, start, end);
+                    .sumDebitOrKreditByCoaIdAndParentIdAndDateRange(120L, start, end);
 
             double bagiHasilFinal = bagiHasil != null ? bagiHasil : 0.0;
 

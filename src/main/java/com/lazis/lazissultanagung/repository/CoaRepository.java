@@ -40,7 +40,7 @@ public interface CoaRepository extends JpaRepository<Coa, Long> {
     @Query("SELECT c FROM Coa c WHERE c.parentAccount.id = :parentId OR c.id = :coaId order by accountCode ASC")
     List<Coa> findByParentAccount_IdOrId(@Param("parentId") Long parentId, @Param("coaId") Long coaId);
 
-    @Query("SELECT c.id, c.accountCode, c.accountName FROM Coa c WHERE c.parentAccount.id IN (116, 121)")
+    @Query("SELECT c.id, c.accountCode, c.accountName FROM Coa c WHERE c.parentAccount.id IN (121)")
     List<Object[]> findByParentAccountsPengelola();
 
 

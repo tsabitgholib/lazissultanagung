@@ -53,7 +53,7 @@ public class JurnalService {
                 } else if (transaction.getDskl() != null) {
                     jurnalDTO.setUraian("Penerimaan Dana DSKL - " + transaction.getDskl().getCategoryName());
                 } else {
-                    jurnalDTO.setUraian("Uraian tidak tersedia");
+                    jurnalDTO.setUraian(" ");
                 }
                 jurnalDTO.setCoa(new ArrayList<>());
                 jurnalDTO.setJumlahDebit(0);

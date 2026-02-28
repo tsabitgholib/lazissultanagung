@@ -167,7 +167,7 @@ public class BukuBesarService {
         } else if (transaction.getDskl() != null) {
             return "Penerimaan Dana DSKL - " + transaction.getDskl().getCategoryName();
         } else {
-            return "Uraian tidak tersedia";
+            return " ";
         }
     }
 }

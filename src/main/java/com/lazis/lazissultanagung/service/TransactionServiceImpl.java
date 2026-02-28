@@ -234,6 +234,7 @@ public class TransactionServiceImpl implements TransactionService {
 //    }
 
     @Override
+    @Transactional
     public ResponseMessage createJurnalUmum(JurnalUmumRequest jurnalUmumRequest) throws BadRequestException {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.getPrincipal() instanceof UserDetailsImpl) {
@@ -246,14 +247,14 @@ public class TransactionServiceImpl implements TransactionService {
             }
 
             // Validasi input
-            if (jurnalUmumRequest.getTransactionDate() == null ||
-                    jurnalUmumRequest.getDescription() == null ||
-                    jurnalUmumRequest.getCategoryType() == null ||
-                    jurnalUmumRequest.getCategoryId() == null ||
-                    jurnalUmumRequest.getDebitDetails() == null ||
-                    jurnalUmumRequest.getKreditDetails() == null) {
-                throw new BadRequestException("Semua field wajib diisi");
-            }
+            // if (jurnalUmumRequest.getTransactionDate() == null ||
+            //         jurnalUmumRequest.getDescription() == null ||
+            //         jurnalUmumRequest.getCategoryType() == null ||
+            //         jurnalUmumRequest.getCategoryId() == null ||
+            //         jurnalUmumRequest.getDebitDetails() == null ||
+            //         jurnalUmumRequest.getKreditDetails() == null) {
+            //     throw new BadRequestException("Semua field wajib diisi");
+            // }
 
             // Hitung nominal debet dan kredit dari detail
             Double nominalDebet = jurnalUmumRequest.getDebitDetails().stream()
@@ -329,6 +330,8 @@ public class TransactionServiceImpl implements TransactionService {
                     break;
                 case "pengelola":
                     break;
+                case "hasil bagi bank":
+                    break;
                 default:
                     throw new BadRequestException("Invalid category type: " + jurnalUmumRequest.getCategoryType().toLowerCase()); // Exception handling update
             }
@@ -382,6 +385,8 @@ public class TransactionServiceImpl implements TransactionService {
                         break;
                     case "pengelola":
                         break;
+                    case "hasil bagi bank":
+                        break;
                     default:
                         throw new BadRequestException("Invalid category type: " + jurnalUmumRequest.getCategoryType().toLowerCase()); // Exception handling update
                 }
@@ -407,6 +412,8 @@ public class TransactionServiceImpl implements TransactionService {
                         break;
                     case "dskl":
                         dsklRepository.updateDSKLCurrentAmount(jurnalUmumRequest.getCategoryId(), nominalDebet);
+                        break;
+                    case "hasil bagi bank":
                         break;
                 }
             }

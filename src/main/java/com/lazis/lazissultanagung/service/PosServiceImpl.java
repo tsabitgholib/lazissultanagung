@@ -371,7 +371,8 @@ public class PosServiceImpl implements PosService {
     public Page<PosHistoryResponse> getPosHistory(Long agenId, Long eventId, LocalDate startDate, LocalDate endDate, String category, String paymentMethod, String search, Pageable pageable) {
         Specification<Transaction> spec = Specification.where(TransactionSpecification.isDebit())
                 .and(TransactionSpecification.isNotPenyaluran())
-                .and(TransactionSpecification.hasChannel("POS"));
+                .and(TransactionSpecification.hasChannel("POS"))
+                .and(TransactionSpecification.isNotHasilBagiBank());
 
         if (agenId != null) {
             spec = spec.and(TransactionSpecification.hasAgenId(agenId));
@@ -406,7 +407,8 @@ public class PosServiceImpl implements PosService {
     public java.util.List<PosHistoryResponse> getPosHistoryList(Long agenId, Long eventId, LocalDate startDate, LocalDate endDate, String category, String paymentMethod, String search) {
         Specification<Transaction> spec = Specification.where(TransactionSpecification.isDebit())
                 .and(TransactionSpecification.isNotPenyaluran())
-                .and(TransactionSpecification.hasChannel("POS"));
+                .and(TransactionSpecification.hasChannel("POS"))
+                .and(TransactionSpecification.isNotHasilBagiBank());
 
         if (agenId != null) {
             spec = spec.and(TransactionSpecification.hasAgenId(agenId));

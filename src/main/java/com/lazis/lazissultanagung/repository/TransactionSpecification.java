@@ -50,6 +50,10 @@ public class TransactionSpecification {
         return (root, query, criteriaBuilder) -> criteriaBuilder.equal(root.get("penyaluran"), false);
     }
 
+    public static Specification<Transaction> isNotHasilBagiBank() {
+        return (root, query, criteriaBuilder) -> criteriaBuilder.notEqual(root.get("category"), "hasil bagi bank");
+    }
+
     public static Specification<Transaction> hasChannel(String channel) {
         return (root, query, criteriaBuilder) -> {
             if (channel == null || channel.isEmpty()) return null;
