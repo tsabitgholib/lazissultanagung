@@ -38,9 +38,6 @@ public class CampaignServiceImpl implements CampaignService {
     private AdminRepository adminRepository;
 
     @Autowired
-    private CloudinaryService cloudinaryService;
-
-    @Autowired
     private ModelMapper modelMapper;
 
     @Autowired

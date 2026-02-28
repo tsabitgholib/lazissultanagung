@@ -1,6 +1,5 @@
 package com.lazis.lazissultanagung.service;
 
-import com.cloudinary.Cloudinary;
 import com.lazis.lazissultanagung.dto.request.DistributionRequest;
 import com.lazis.lazissultanagung.enumeration.ERole;
 import com.lazis.lazissultanagung.exception.BadRequestException;
@@ -42,16 +41,10 @@ public class DistributionServiceImpl implements DistributionService{
     private WakafRepository wakafRepository;
 
     @Autowired
-    private Cloudinary cloudinary;
-
-    @Autowired
     private ModelMapper modelMapper;
 
     @Autowired
     private AdminRepository adminRepository;
-
-    @Autowired
-    private CloudinaryService cloudinaryService;
 
     @Autowired
     private FileStorageService fileStorageService;

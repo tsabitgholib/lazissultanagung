@@ -9,7 +9,6 @@ import com.lazis.lazissultanagung.enumeration.ERole;
 import com.lazis.lazissultanagung.exception.BadRequestException;
 import com.lazis.lazissultanagung.model.*;
 import com.lazis.lazissultanagung.repository.*;
-import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

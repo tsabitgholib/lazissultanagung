@@ -49,8 +49,7 @@ public class TransactionController {
 
     @PostMapping("/jurnal-umum")
     public ResponseMessage createJurnalUmum(@RequestBody JurnalUmumRequest request) {
-        // Panggil service untuk membuat jurnal umum
-        ResponseMessage response = transactionService.createJurnalUmum(request);
+        // ResponseMessage response = transactionService.createJurnalUmum(request);
         return new ResponseMessage(true, "Input Jurnal umum berhasil disimpan");
     }
 

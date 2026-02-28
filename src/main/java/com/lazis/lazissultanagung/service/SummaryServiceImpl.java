@@ -28,9 +28,6 @@ public class SummaryServiceImpl implements SummaryService {
     private TransactionRepository transactionRepository;
 
     @Autowired
-    private DonaturRepository donaturRepository;
-
-    @Autowired
     private AdminRepository adminRepository;
 
     @Autowired
@@ -47,9 +44,6 @@ public class SummaryServiceImpl implements SummaryService {
 
     @Autowired
     private DSKLRepository dsklRepository;
-
-    @Autowired
-    private PercentageForCampaignRepository percentageForCampaignRepository;
 
     @Autowired
     private PercentageForCampaignService percentageForCampaignService;

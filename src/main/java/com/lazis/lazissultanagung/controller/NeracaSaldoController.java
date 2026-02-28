@@ -85,18 +85,18 @@ public class NeracaSaldoController {
                 .sum();
     }
 
-    private Map<String, Object> calculateDetailsByCoaIds(List<Long> coaIds, LocalDate startDate, LocalDate endDate) {
-        Map<String, Object> details = new LinkedHashMap<>();
-        for (Long coaId : coaIds) {
-            Coa coa = coaRepository.findById(coaId).orElse(null);
-            if (coa != null) {
-                Map<String, Object> accountDetails = calculateAccountDetails(coaId, startDate, endDate);
-                String kodeName = coa.getAccountCode() + " " + coa.getAccountName();
-                details.put(kodeName, accountDetails);
-            }
-        }
-        return details;
-    }
+    // private Map<String, Object> calculateDetailsByCoaIds(List<Long> coaIds, LocalDate startDate, LocalDate endDate) {
+    //     Map<String, Object> details = new LinkedHashMap<>();
+    //     for (Long coaId : coaIds) {
+    //         Coa coa = coaRepository.findById(coaId).orElse(null);
+    //         if (coa != null) {
+    //             Map<String, Object> accountDetails = calculateAccountDetails(coaId, startDate, endDate);
+    //             String kodeName = coa.getAccountCode() + " " + coa.getAccountName();
+    //             details.put(kodeName, accountDetails);
+    //         }
+    //     }
+    //     return details;
+    // }
 
     private Map<String, Object> calculateDetailsByParentId(List<Long> parentId, LocalDate startDate, LocalDate endDate) {
         List<Coa> coaList = coaRepository.findByParentAccount_IdIn(parentId);

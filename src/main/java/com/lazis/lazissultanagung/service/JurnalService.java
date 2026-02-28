@@ -2,8 +2,6 @@ package com.lazis.lazissultanagung.service;
 
 import com.lazis.lazissultanagung.dto.response.*;
 import com.lazis.lazissultanagung.model.Transaction;
-import com.lazis.lazissultanagung.repository.CoaRepository;
-import com.lazis.lazissultanagung.repository.SaldoAwalRepository;
 import com.lazis.lazissultanagung.repository.TransactionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -22,11 +20,9 @@ public class JurnalService {
 
 
     public JurnalResponseWrapper getJurnalFilterDate(LocalDate startDate, LocalDate endDate) {
-        // Konversi LocalDate ke LocalDateTime
         LocalDateTime startDateTime = startDate.atStartOfDay();
         LocalDateTime endDateTime = endDate.atTime(23, 59, 59);
 
-        // Ambil data transaksi berdasarkan interval waktu
         List<Transaction> transactions = transactionRepository.findAllByTransactionDateBetween(startDateTime, endDateTime);
 
         Map<String, JurnalResponse> jurnalMap = new LinkedHashMap<>(); // Gunakan LinkedHashMap untuk menjaga urutan
