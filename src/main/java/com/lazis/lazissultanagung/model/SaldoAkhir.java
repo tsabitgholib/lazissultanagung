@@ -9,6 +9,11 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
+@Table(
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = {"coa_id", "month", "year"})
+        }
+)
 public class SaldoAkhir {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

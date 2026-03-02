@@ -55,30 +55,32 @@ public class LaporanAktivitasDSKLController {
         Map<String, Double> surplusDefisitPerBulan = new LinkedHashMap<>();
 
         // Loop untuk menghitung surplus/defisit per bulan (NOVEMBER, DECEMBER)
-        for (int month = month1; month <= month2; month++) {
-            String monthName = LocalDate.of(year1, month, 1).getMonth().name();
+        LocalDate start = LocalDate.of(year1, month1, 1);
+        LocalDate end = LocalDate.of(year2, month2, 1);
 
-            // Mendapatkan total penerimaan dan pendayagunaan per bulan
+        while (!start.isAfter(end)) {
+
+            int month = start.getMonthValue();
+            int year = start.getYear();
+            String monthName = start.getMonth().name();
+
             Double totalPenerimaan = (Double) penerimaanDSKLDetails
-                    .get("Total Bulan " + monthName + " " + (month == month2 ? year2 : year1));
+                    .getOrDefault("Total Bulan " + monthName + " " + year, 0.0);
+
             Double totalPendayagunaan = (Double) pendayagunaanDSKLDetails
-                    .get("Total Bulan " + monthName + " " + (month == month2 ? year2 : year1));
+                    .getOrDefault("Total Bulan " + monthName + " " + year, 0.0);
 
-            if (totalPenerimaan == null)
-                totalPenerimaan = 0.0;
-            if (totalPendayagunaan == null)
-                totalPendayagunaan = 0.0;
+            double surplus = totalPenerimaan - totalPendayagunaan;
 
-            // Menghitung surplus/defisit untuk bulan ini
-            double surplusDefisit = totalPenerimaan - totalPendayagunaan;
-            surplusDefisitPerBulan.put(monthName + " " + (month == month2 ? year2 : year1), surplusDefisit);
+            surplusDefisitPerBulan.put(monthName + " " + year, surplus);
 
-            response.put("Surplus (Defisit) Dana " + monthName + " " + (month == month2 ? year2 : year1),
-                    surplusDefisit);
+            response.put("Surplus (Defisit) Dana " + monthName + " " + year, surplus);
+
+            start = start.plusMonths(1);
         }
 
-        // Saldo Awal Dana Zakat (COA ID 47)
-        double saldoAwalDanaZakat = 0.0;
+        // Saldo Awal Dana dskl (COA ID 47)
+        double saldoAwalDanaDSKL = 0.0;
         LocalDate currentDate = LocalDate.of(year1, month1, 1);
 
         while (currentDate.getYear() < year2
@@ -88,25 +90,20 @@ public class LaporanAktivitasDSKLController {
 
             Optional<SaldoAwal> saldoAwalOpt = saldoAwalRepository.findSaldoAwalByCoaAndMonthAndYear(47L, month, year);
             if (saldoAwalOpt.isPresent()) {
-                saldoAwalDanaZakat = saldoAwalOpt.get().getSaldoAwal();
+                saldoAwalDanaDSKL = saldoAwalOpt.get().getSaldoAwal();
             } else {
                 String key = "Saldo Akhir Dana " + currentDate.minusMonths(1).getMonth().name() + " "
                         + currentDate.minusMonths(1).getYear();
                 if (response.containsKey(key) && response.get(key) != null) {
-                    saldoAwalDanaZakat = (double) response.get(key);
+                    saldoAwalDanaDSKL = (double) response.get(key);
                 } else {
-                    // Cek database saldo akhir bulan sebelumnya jika tidak ada di response map
                     LocalDate prevDate = currentDate.minusMonths(1);
-                    Optional<SaldoAkhir> prevSaldoAkhir = saldoAkhirRepository.findByCoaAndMonthAndYear(
-                            coaRepository.findById(47L).orElse(null),
-                            prevDate.getMonthValue(),
-                            prevDate.getYear()
-                    );
-                    saldoAwalDanaZakat = prevSaldoAkhir.map(SaldoAkhir::getSaldoAkhir).orElse(0.0);
+                    Optional<SaldoAkhir> prevSaldoAkhir = saldoAkhirRepository.findByCoa_IdAndMonthAndYear(47L, prevDate.getMonthValue(), prevDate.getYear());
+                    saldoAwalDanaDSKL = prevSaldoAkhir.map(SaldoAkhir::getSaldoAkhir).orElse(0.0);
                 }
             }
 
-            response.put("Saldo Awal Dana " + currentDate.getMonth().name() + " " + year, saldoAwalDanaZakat);
+            response.put("Saldo Awal Dana " + currentDate.getMonth().name() + " " + year, saldoAwalDanaDSKL);
 
             // Mengambil surplus/defisit untuk bulan ini
             String monthName = currentDate.getMonth().name();
@@ -114,21 +111,21 @@ public class LaporanAktivitasDSKLController {
                     .getOrDefault(monthName + " " + (month == month2 ? year2 : year1), 0.0);
 
             // Menghitung saldo akhir Dana Zakat bulan ini
-            double saldoAkhirDanaZakat = surplusDefisit >= 0
-                    ? saldoAwalDanaZakat + surplusDefisit
-                    : saldoAwalDanaZakat - surplusDefisit;
+            // double saldoAkhirDanaDSKL = surplusDefisit >= 0
+            //         ? saldoAwalDanaDSKL + surplusDefisit
+            //         : saldoAwalDanaDSKL - surplusDefisit;
+            double saldoAkhirDanaDSKL = saldoAwalDanaDSKL + surplusDefisit;
 
-            // Menyimpan saldo akhir ke tabel SaldoAkhirDanaZakat
-            Optional<SaldoAkhir> existingSaldoAkhir = saldoAkhirRepository
-                    .findByCoaAndMonthAndYear(coaRepository.findById(47L).orElse(null), month, year);
-            SaldoAkhir saldoAkhirDanaZakatEntity = existingSaldoAkhir.orElse(new SaldoAkhir());
-            saldoAkhirDanaZakatEntity.setCoa(coaRepository.findById(47L).orElse(null));
-            saldoAkhirDanaZakatEntity.setMonth(month);
-            saldoAkhirDanaZakatEntity.setYear(year);
-            saldoAkhirDanaZakatEntity.setSaldoAkhir(saldoAkhirDanaZakat);
-            saldoAkhirRepository.save(saldoAkhirDanaZakatEntity);
+            Optional<SaldoAkhir> existingSaldoAkhir = saldoAkhirRepository.findByCoa_IdAndMonthAndYear(47L, month, year);
+            SaldoAkhir saldoAkhirDanaDSKLEntity = existingSaldoAkhir.orElse(new SaldoAkhir());
+            saldoAkhirDanaDSKLEntity.setCoa(coaRepository.findById(47L).orElse(null));
+            saldoAkhirDanaDSKLEntity.setMonth(month);
+            saldoAkhirDanaDSKLEntity.setYear(year);
+            saldoAkhirDanaDSKLEntity.setSaldoAkhir(saldoAkhirDanaDSKL);
+            saldoAkhirRepository.save(saldoAkhirDanaDSKLEntity);
 
-            response.put("Saldo Akhir Dana " + currentDate.getMonth().name() + " " + year, saldoAkhirDanaZakat);
+
+            response.put("Saldo Akhir Dana " + currentDate.getMonth().name() + " " + year, saldoAkhirDanaDSKL);
 
             currentDate = currentDate.plusMonths(1);
         }

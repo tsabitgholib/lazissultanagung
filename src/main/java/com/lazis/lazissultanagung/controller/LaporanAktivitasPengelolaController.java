@@ -110,8 +110,8 @@ public class LaporanAktivitasPengelolaController {
             double saldoAkhirDanaPengelola = saldoAwalDanaPengelola + surplusDefisit;
 
             // Simpan ke database
-            Optional<SaldoAkhir> existingSaldoAkhir = saldoAkhirRepository.findByCoaAndMonthAndYear(
-                    coaRepository.findById(50L).orElse(null), month, year);
+            Optional<SaldoAkhir> existingSaldoAkhir = saldoAkhirRepository.findByCoa_IdAndMonthAndYear(
+                    50L, month, year);
             SaldoAkhir entity = existingSaldoAkhir.orElse(new SaldoAkhir());
             entity.setCoa(coaRepository.findById(50L).orElse(null));
             entity.setMonth(month);

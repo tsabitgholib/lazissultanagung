@@ -55,21 +55,28 @@ public class LaporanAktivitasZakatController {
         Map<String, Double> surplusDefisitPerBulan = new LinkedHashMap<>();
 
         // Loop untuk menghitung surplus/defisit per bulan (NOVEMBER, DECEMBER)
-        for (int month = month1; month <= month2; month++) {
-            String monthName = LocalDate.of(year1, month, 1).getMonth().name();
+        LocalDate start = LocalDate.of(year1, month1, 1);
+        LocalDate end = LocalDate.of(year2, month2, 1);
 
-            // Mendapatkan total penerimaan dan pendayagunaan per bulan
-            Double totalPenerimaan = (Double) penerimaanZakatDetails.get("Total Bulan " + monthName + " " + (month == month2 ? year2 : year1));
-            Double totalPendayagunaan = (Double) pendayagunaanZakatDetails.get("Total Bulan " + monthName + " " + (month == month2 ? year2 : year1));
+        while (!start.isAfter(end)) {
 
-            if (totalPenerimaan == null) totalPenerimaan = 0.0;
-            if (totalPendayagunaan == null) totalPendayagunaan = 0.0;
+            int month = start.getMonthValue();
+            int year = start.getYear();
+            String monthName = start.getMonth().name();
 
-            // Menghitung surplus/defisit untuk bulan ini
-            double surplusDefisit = totalPenerimaan - totalPendayagunaan;
-            surplusDefisitPerBulan.put(monthName + " " + (month == month2 ? year2 : year1), surplusDefisit);
+            Double totalPenerimaan = (Double) penerimaanZakatDetails
+                    .getOrDefault("Total Bulan " + monthName + " " + year, 0.0);
 
-            response.put("Surplus (Defisit) Dana " + monthName + " " + (month == month2 ? year2 : year1), surplusDefisit);
+            Double totalPendayagunaan = (Double) pendayagunaanZakatDetails
+                    .getOrDefault("Total Bulan " + monthName + " " + year, 0.0);
+
+            double surplus = totalPenerimaan - totalPendayagunaan;
+
+            surplusDefisitPerBulan.put(monthName + " " + year, surplus);
+
+            response.put("Surplus (Defisit) Dana " + monthName + " " + year, surplus);
+
+            start = start.plusMonths(1);
         }
 
         // Saldo Awal Dana Zakat (COA ID 45)
@@ -88,13 +95,8 @@ public class LaporanAktivitasZakatController {
                 if (response.containsKey(key) && response.get(key) != null) {
                     saldoAwalDanaZakat = (double) response.get(key);
                 } else {
-                    // Cek database saldo akhir bulan sebelumnya jika tidak ada di response map
                     LocalDate prevDate = currentDate.minusMonths(1);
-                    Optional<SaldoAkhir> prevSaldoAkhir = saldoAkhirRepository.findByCoaAndMonthAndYear(
-                            coaRepository.findById(45L).orElse(null),
-                            prevDate.getMonthValue(),
-                            prevDate.getYear()
-                    );
+                    Optional<SaldoAkhir> prevSaldoAkhir = saldoAkhirRepository.findByCoa_IdAndMonthAndYear(45L, prevDate.getMonthValue(), prevDate.getYear());
                     saldoAwalDanaZakat = prevSaldoAkhir.map(SaldoAkhir::getSaldoAkhir).orElse(0.0);
                 }
             }
@@ -106,14 +108,15 @@ public class LaporanAktivitasZakatController {
             double surplusDefisit = surplusDefisitPerBulan.getOrDefault(monthName + " " + (month == month2 ? year2 : year1), 0.0);
 
             // Menghitung saldo akhir Dana Zakat bulan ini
-            double saldoAkhirDanaZakat = surplusDefisit >= 0
-                    ? saldoAwalDanaZakat + surplusDefisit
-                    : saldoAwalDanaZakat - surplusDefisit;
+            // double saldoAkhirDanaZakat = surplusDefisit >= 0
+            //         ? saldoAwalDanaZakat + surplusDefisit
+            //         : saldoAwalDanaZakat - surplusDefisit;
 
-            // Menyimpan saldo akhir ke tabel SaldoAkhirDanaZakat
-            Optional<SaldoAkhir> existingSaldoAkhir = saldoAkhirRepository.findByCoaAndMonthAndYear(coaRepository.findById(45L).orElse(null), month, year);
+            double saldoAkhirDanaZakat = saldoAwalDanaZakat + surplusDefisit;
+
+            Optional<SaldoAkhir> existingSaldoAkhir = saldoAkhirRepository.findByCoa_IdAndMonthAndYear(46L, month, year);
             SaldoAkhir saldoAkhirDanaZakatEntity = existingSaldoAkhir.orElse(new SaldoAkhir());
-            saldoAkhirDanaZakatEntity.setCoa(coaRepository.findById(45L).orElse(null));
+            saldoAkhirDanaZakatEntity.setCoa(coaRepository.findById(46L).orElse(null));
             saldoAkhirDanaZakatEntity.setMonth(month);
             saldoAkhirDanaZakatEntity.setYear(year);
             saldoAkhirDanaZakatEntity.setSaldoAkhir(saldoAkhirDanaZakat);
@@ -277,4 +280,3 @@ private Map<String, Double> calculateMonthlyBreakdownForMultipleCoa(
 }
 
 }
-

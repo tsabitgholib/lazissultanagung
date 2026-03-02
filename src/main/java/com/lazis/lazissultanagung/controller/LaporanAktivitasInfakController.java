@@ -38,50 +38,52 @@ public class LaporanAktivitasInfakController {
     private SaldoAkhirRepository saldoAkhirRepository;
 
     @GetMapping("/infak-activity-report")
-    public ResponseEntity<Map<String, Object>> getZakatActivityReport(
+    public ResponseEntity<Map<String, Object>> getInfakActivityReport(
             @RequestParam("month1") int month1,
             @RequestParam("year1") int year1,
             @RequestParam("month2") int month2,
             @RequestParam("year2") int year2) {
         Map<String, Object> response = new LinkedHashMap<>();
 
-        // Penerimaan Dana Zakat (COA ID 71)
-        Map<String, Object> penerimaanZakatDetails = getCoaDetailsWithTransactions(71L, month1, year1, month2, year2);
-        response.put("Penerimaan Dana", penerimaanZakatDetails);
+        // Penerimaan Dana Infak (COA ID 71)
+        Map<String, Object> penerimaanInfakDetails = getCoaDetailsWithTransactions(71L, month1, year1, month2, year2);
+        response.put("Penerimaan Dana", penerimaanInfakDetails);
 
-        // Pendayagunaan Dana Zakat (COA ID 75)
-        Map<String, Object> pendayagunaanZakatDetails = getPendayagunaanByCategory(month1, year1, month2, year2);
+        // Pendayagunaan Dana Infak (COA ID 75)
+        Map<String, Object> pendayagunaanInfakDetails = getPendayagunaanByCategory(month1, year1, month2, year2);
 
-        response.put("Pendayagunaan Dana", pendayagunaanZakatDetails);
+        response.put("Pendayagunaan Dana", pendayagunaanInfakDetails);
 
         // Variabel untuk menyimpan surplus/defisit per bulan
         Map<String, Double> surplusDefisitPerBulan = new LinkedHashMap<>();
 
         // Loop untuk menghitung surplus/defisit per bulan (NOVEMBER, DECEMBER)
-        for (int month = month1; month <= month2; month++) {
-            String monthName = LocalDate.of(year1, month, 1).getMonth().name();
+        LocalDate start = LocalDate.of(year1, month1, 1);
+        LocalDate end = LocalDate.of(year2, month2, 1);
 
-            // Mendapatkan total penerimaan dan pendayagunaan per bulan
-            Double totalPenerimaan = (Double) penerimaanZakatDetails
-                    .get("Total Bulan " + monthName + " " + (month == month2 ? year2 : year1));
-            Double totalPendayagunaan = (Double) pendayagunaanZakatDetails
-                    .get("Total Bulan " + monthName + " " + (month == month2 ? year2 : year1));
+        while (!start.isAfter(end)) {
 
-            if (totalPenerimaan == null)
-                totalPenerimaan = 0.0;
-            if (totalPendayagunaan == null)
-                totalPendayagunaan = 0.0;
+            int month = start.getMonthValue();
+            int year = start.getYear();
+            String monthName = start.getMonth().name();
 
-            // Menghitung surplus/defisit untuk bulan ini
-            double surplusDefisit = totalPenerimaan - totalPendayagunaan;
-            surplusDefisitPerBulan.put(monthName + " " + (month == month2 ? year2 : year1), surplusDefisit);
+            Double totalPenerimaan = (Double) penerimaanInfakDetails
+                    .getOrDefault("Total Bulan " + monthName + " " + year, 0.0);
 
-            response.put("Surplus (Defisit) Dana " + monthName + " " + (month == month2 ? year2 : year1),
-                    surplusDefisit);
+            Double totalPendayagunaan = (Double) pendayagunaanInfakDetails
+                    .getOrDefault("Total Bulan " + monthName + " " + year, 0.0);
+
+            double surplus = totalPenerimaan - totalPendayagunaan;
+
+            surplusDefisitPerBulan.put(monthName + " " + year, surplus);
+
+            response.put("Surplus (Defisit) Dana " + monthName + " " + year, surplus);
+
+            start = start.plusMonths(1);
         }
 
-        // Saldo Awal Dana Zakat (COA ID 46)
-        double saldoAwalDanaZakat = 0.0;
+        // Saldo Awal Dana infak (COA ID 46)
+        double saldoAwalDanaInfak = 0.0;
         LocalDate currentDate = LocalDate.of(year1, month1, 1);
 
         while (currentDate.getYear() < year2
@@ -91,47 +93,40 @@ public class LaporanAktivitasInfakController {
 
             Optional<SaldoAwal> saldoAwalOpt = saldoAwalRepository.findSaldoAwalByCoaAndMonthAndYear(46L, month, year);
             if (saldoAwalOpt.isPresent()) {
-                saldoAwalDanaZakat = saldoAwalOpt.get().getSaldoAwal();
+                saldoAwalDanaInfak = saldoAwalOpt.get().getSaldoAwal();
             } else {
-                String key = "Saldo Akhir Dana " + currentDate.minusMonths(1).getMonth().name() + " "
-                        + currentDate.minusMonths(1).getYear();
+                String key = "Saldo Akhir Dana " + currentDate.minusMonths(1).getMonth().name() + " " + currentDate.minusMonths(1).getYear();
                 if (response.containsKey(key) && response.get(key) != null) {
-                    saldoAwalDanaZakat = (double) response.get(key);
+                    saldoAwalDanaInfak = (double) response.get(key);
                 } else {
-                    // Cek database saldo akhir bulan sebelumnya jika tidak ada di response map
                     LocalDate prevDate = currentDate.minusMonths(1);
-                    Optional<SaldoAkhir> prevSaldoAkhir = saldoAkhirRepository.findByCoaAndMonthAndYear(
-                            coaRepository.findById(46L).orElse(null),
-                            prevDate.getMonthValue(),
-                            prevDate.getYear()
-                    );
-                    saldoAwalDanaZakat = prevSaldoAkhir.map(SaldoAkhir::getSaldoAkhir).orElse(0.0);
+                    Optional<SaldoAkhir> prevSaldoAkhir = saldoAkhirRepository.findByCoa_IdAndMonthAndYear(46L, prevDate.getMonthValue(), prevDate.getYear());
+                    saldoAwalDanaInfak = prevSaldoAkhir.map(SaldoAkhir::getSaldoAkhir).orElse(0.0);
                 }
             }
 
-            response.put("Saldo Awal Dana " + currentDate.getMonth().name() + " " + year, saldoAwalDanaZakat);
+            response.put("Saldo Awal Dana " + currentDate.getMonth().name() + " " + year, saldoAwalDanaInfak);
 
             // Mengambil surplus/defisit untuk bulan ini
             String monthName = currentDate.getMonth().name();
             double surplusDefisit = surplusDefisitPerBulan
                     .getOrDefault(monthName + " " + (month == month2 ? year2 : year1), 0.0);
 
-            // Menghitung saldo akhir Dana Zakat bulan ini
-            double saldoAkhirDanaZakat = surplusDefisit >= 0
-                    ? saldoAwalDanaZakat + surplusDefisit
-                    : saldoAwalDanaZakat - surplusDefisit;
+            // Menghitung saldo akhir Dana Infak bulan ini
+            // double saldoAkhirDanaInfak = surplusDefisit >= 0
+            //         ? saldoAwalDanaInfak + surplusDefisit
+            //         : saldoAwalDanaInfak - surplusDefisit;
+            double saldoAkhirDanaInfak = saldoAwalDanaInfak + surplusDefisit;
 
-            // Menyimpan saldo akhir ke tabel SaldoAkhirDanaZakat
-            Optional<SaldoAkhir> existingSaldoAkhir = saldoAkhirRepository
-                    .findByCoaAndMonthAndYear(coaRepository.findById(46L).orElse(null), month, year);
-            SaldoAkhir saldoAkhirDanaZakatEntity = existingSaldoAkhir.orElse(new SaldoAkhir());
-            saldoAkhirDanaZakatEntity.setCoa(coaRepository.findById(46L).orElse(null));
-            saldoAkhirDanaZakatEntity.setMonth(month);
-            saldoAkhirDanaZakatEntity.setYear(year);
-            saldoAkhirDanaZakatEntity.setSaldoAkhir(saldoAkhirDanaZakat);
-            saldoAkhirRepository.save(saldoAkhirDanaZakatEntity);
+            Optional<SaldoAkhir> existingSaldoAkhir = saldoAkhirRepository.findByCoa_IdAndMonthAndYear(46L, month, year);
+            SaldoAkhir saldoAkhirDanaInfakEntity = existingSaldoAkhir.orElse(new SaldoAkhir());
+            saldoAkhirDanaInfakEntity.setCoa(coaRepository.findById(46L).orElse(null));
+            saldoAkhirDanaInfakEntity.setMonth(month);
+            saldoAkhirDanaInfakEntity.setYear(year);
+            saldoAkhirDanaInfakEntity.setSaldoAkhir(saldoAkhirDanaInfak);
+            saldoAkhirRepository.save(saldoAkhirDanaInfakEntity);
 
-            response.put("Saldo Akhir Dana " + currentDate.getMonth().name() + " " + year, saldoAkhirDanaZakat);
+            response.put("Saldo Akhir Dana " + currentDate.getMonth().name() + " " + year, saldoAkhirDanaInfak);
 
             currentDate = currentDate.plusMonths(1);
         }
