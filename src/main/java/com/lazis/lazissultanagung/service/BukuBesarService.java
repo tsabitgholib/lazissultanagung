@@ -95,28 +95,22 @@ public class BukuBesarService {
 
 
     private double calculateSaldoAwal(Long coaId, LocalDate startDate) {
-        // Awal bulan dari tanggal filter (startDate)
         LocalDate startOfMonth = startDate.withDayOfMonth(1);
 
-        // Akhir bulan sebelumnya
         LocalDate endOfPreviousMonth = startOfMonth.minusDays(1);
 
-        // Ambil saldo awal dari tabel saldo_awal untuk coaId
         Optional<SaldoAwal> saldoAwalOpt = saldoAwalRepository.findByCoa(coaRepository.findById(coaId).orElseThrow());
 
-        // Jika saldo awal belum diinput, mulai dengan saldo awal 0
         double saldoAwal = saldoAwalOpt.map(SaldoAwal::getSaldoAwal).orElse(0.0);
 
-        // Ambil semua transaksi hingga akhir bulan sebelum startDate
         List<Transaction> previousTransactions = transactionRepository.findByCoaIdAndTransactionDateBetween(
                 coaId,
                 saldoAwalOpt.isPresent() ?
                         saldoAwalOpt.get().getTanggalInput().withDayOfMonth(1).atStartOfDay() :
-                        LocalDate.of(1900, 1, 1).atStartOfDay(), // Jika tidak ada saldo awal, mulai dari tanggal sangat lama
+                        LocalDate.of(1900, 1, 1).atStartOfDay(),
                 endOfPreviousMonth.atTime(23, 59, 59)
         );
 
-        // Tambahkan semua transaksi ke saldo awal
         for (Transaction transaction : previousTransactions) {
             saldoAwal += transaction.getDebit() - transaction.getKredit();
         }
@@ -125,28 +119,22 @@ public class BukuBesarService {
     }
 
     private double calculateSaldoAwalKredit(Long coaId, LocalDate startDate) {
-        // Awal bulan dari tanggal filter (startDate)
         LocalDate startOfMonth = startDate.withDayOfMonth(1);
 
-        // Akhir bulan sebelumnya
         LocalDate endOfPreviousMonth = startOfMonth.minusDays(1);
 
-        // Ambil saldo awal dari tabel saldo_awal untuk coaId
         Optional<SaldoAwal> saldoAwalOpt = saldoAwalRepository.findByCoa(coaRepository.findById(coaId).orElseThrow());
 
-        // Jika saldo awal belum diinput, mulai dengan saldo awal 0
         double saldoAwal = saldoAwalOpt.map(SaldoAwal::getSaldoAwal).orElse(0.0);
 
-        // Ambil semua transaksi hingga akhir bulan sebelum startDate
         List<Transaction> previousTransactions = transactionRepository.findByCoaIdAndTransactionDateBetween(
                 coaId,
                 saldoAwalOpt.isPresent() ?
                         saldoAwalOpt.get().getTanggalInput().withDayOfMonth(1).atStartOfDay() :
-                        LocalDate.of(1900, 1, 1).atStartOfDay(), // Jika tidak ada saldo awal, mulai dari tanggal sangat lama
+                        LocalDate.of(1900, 1, 1).atStartOfDay(), 
                 endOfPreviousMonth.atTime(23, 59, 59)
         );
 
-        // Tambahkan semua transaksi ke saldo awal
         for (Transaction transaction : previousTransactions) {
             saldoAwal += transaction.getKredit() - transaction.getDebit();
         }

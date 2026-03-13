@@ -189,6 +189,24 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long>,
                         @Param("startDate") LocalDateTime startDate,
                         @Param("endDate") LocalDateTime endDate);
 
+        @Query("SELECT COALESCE(SUM(CASE WHEN t.debit > 0 THEN t.debit ELSE 0 END + CASE WHEN t.kredit > 0 THEN t.kredit ELSE 0 END), 0.0) "
+                        +
+                        "FROM Transaction t WHERE (t.coa.id = :coaId OR t.coa.parentAccount.id = :coaId OR t.coa.parentAccount.parentAccount.id = :coaId) " +
+                        "AND t.transactionDate BETWEEN :startDate AND :endDate AND t.category != 'hasil bagi bank'")
+        Double sumVolumeByCoaTree(
+                        @Param("coaId") Long coaId,
+                        @Param("startDate") LocalDateTime startDate,
+                        @Param("endDate") LocalDateTime endDate);
+
+        @Query("SELECT COALESCE(SUM(CASE WHEN t.debit > 0 THEN t.debit ELSE 0 END + CASE WHEN t.kredit > 0 THEN t.kredit ELSE 0 END), 0.0) "
+                        +
+                        "FROM Transaction t WHERE t.coa.id IN :coaIds " +
+                        "AND t.transactionDate BETWEEN :startDate AND :endDate AND t.category != 'hasil bagi bank'")
+        Double sumVolumeByCoaIds(
+                        @Param("coaIds") List<Long> coaIds,
+                        @Param("startDate") LocalDateTime startDate,
+                        @Param("endDate") LocalDateTime endDate);
+
         @Query("SELECT SUM(t.debit) FROM Transaction t WHERE t.coa.id = :coaId AND t.transactionDate BETWEEN :startDate AND :endDate AND t.category != 'hasil bagi bank'")
         Optional<Double> sumDebitByCoaIdAndDateRanges(@Param("coaId") Long coaId,
                         @Param("startDate") LocalDateTime startDate,
