@@ -16,7 +16,11 @@ public class DSKL implements BaseModel {
     private long id;
 
     private String categoryName;
+
+    @org.hibernate.annotations.Formula("(SELECT COALESCE(SUM(t.debit), 0) FROM transaction t WHERE t.dskl_id = id AND t.penyaluran = 0 AND t.success = 1)")
     private double amount;
+
+    @org.hibernate.annotations.Formula("(SELECT COALESCE(SUM(d.distribution_amount), 0) FROM distribution d WHERE d.dskl_id = id AND d.success = 1)")
     private double distribution;
 
     @Column(columnDefinition = "BOOLEAN")

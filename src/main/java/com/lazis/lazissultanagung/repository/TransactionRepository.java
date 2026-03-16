@@ -299,4 +299,16 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long>,
         Double sumDSKLByDateRange(
                         @Param("startDate") LocalDateTime startDate,
                         @Param("endDate") LocalDateTime endDate);
+
+        @Query(value = "CALL sp_laporan_dana_infak(:bulan1, :bulan2)", nativeQuery = true)
+        List<Object[]> getInfakActivityReportNative(@Param("bulan1") String bulan1, @Param("bulan2") String bulan2);
+
+        @Query(value = "CALL sp_laporan_dana_zakat(:bulan1, :bulan2)", nativeQuery = true)
+        List<Object[]> getZakatActivityReportNative(@Param("bulan1") String bulan1, @Param("bulan2") String bulan2);
+
+        @Query(value = "CALL sp_laporan_dana_dskl(:bulan1, :bulan2)", nativeQuery = true)
+        List<Object[]> getDsklActivityReportNative(@Param("bulan1") String bulan1, @Param("bulan2") String bulan2);
+
+        @Query(value = "CALL sp_laporan_dana_pengelola(:bulan1, :bulan2)", nativeQuery = true)
+        List<Object[]> getPengelolaActivityReportNative(@Param("bulan1") String bulan1, @Param("bulan2") String bulan2);
 }

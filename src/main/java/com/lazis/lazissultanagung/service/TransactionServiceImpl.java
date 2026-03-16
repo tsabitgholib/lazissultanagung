@@ -491,31 +491,8 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     private void updateCategoryAmount(TemporaryTransaction temp) {
-        String categoryType = temp.getCategory();
-        if (categoryType == null) return;
-        
-        switch (categoryType.toLowerCase()) {
-            case "zakat":
-                if (temp.getZakat() != null) {
-                    zakatRepository.updateZakatCurrentAmount(temp.getZakat().getId(), temp.getTransactionAmount());
-                }
-                break;
-            case "infak":
-                if (temp.getInfak() != null) {
-                    infakRepository.updateInfakCurrentAmount(temp.getInfak().getId(), temp.getTransactionAmount());
-                }
-                break;
-            case "dskl":
-                if (temp.getDskl() != null) {
-                    dsklRepository.updateDSKLCurrentAmount(temp.getDskl().getId(), temp.getTransactionAmount());
-                }
-                break;
-            case "campaign":
-                if (temp.getCampaign() != null) {
-                    campaignRepository.updateCampaignCurrentAmount(temp.getCampaign().getCampaignId(), temp.getTransactionAmount());
-                }
-                break;
-        }
+        // Logika ini dinonaktifkan karena currentAmount dan amount sekarang dihitung secara dinamis
+        // menggunakan @Formula berdasarkan tabel transaction.
     }
 
 

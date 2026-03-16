@@ -41,12 +41,14 @@ public class Campaign {
 
     private double targetAmount;
 
+    @org.hibernate.annotations.Formula("(SELECT COALESCE(SUM(t.debit), 0) FROM transaction t WHERE t.campaign_id = campaign_id AND t.penyaluran = 0 AND t.success = 1)")
     private double currentAmount;
 
     @ManyToOne
     @JoinColumn(name = "creator", referencedColumnName = "id")
     private Admin admin;
 
+    @org.hibernate.annotations.Formula("(SELECT COALESCE(SUM(d.distribution_amount), 0) FROM distribution d WHERE d.campaign_id = campaign_id AND d.success = 1)")
     private double distribution;
 
     @Column(nullable = false, updatable = false)

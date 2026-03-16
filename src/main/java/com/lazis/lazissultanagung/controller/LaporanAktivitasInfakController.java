@@ -43,239 +43,84 @@ public class LaporanAktivitasInfakController {
             @RequestParam("year1") int year1,
             @RequestParam("month2") int month2,
             @RequestParam("year2") int year2) {
+        
+        String bulan1 = String.format("%d-%02d", year1, month1);
+        String bulan2 = String.format("%d-%02d", year2, month2);
+        
+        List<Object[]> results = transactionRepository.getInfakActivityReportNative(bulan1, bulan2);
+        
         Map<String, Object> response = new LinkedHashMap<>();
-
-        // Penerimaan Dana Infak (COA ID 71)
-        Map<String, Object> penerimaanInfakDetails = getCoaDetailsWithTransactions(71L, month1, year1, month2, year2);
-        response.put("Penerimaan Dana", penerimaanInfakDetails);
-
-        // Pendayagunaan Dana Infak (COA ID 75)
-        Map<String, Object> pendayagunaanInfakDetails = getPendayagunaanByCategory(month1, year1, month2, year2);
-
-        response.put("Pendayagunaan Dana", pendayagunaanInfakDetails);
-
-        // Variabel untuk menyimpan surplus/defisit per bulan
-        Map<String, Double> surplusDefisitPerBulan = new LinkedHashMap<>();
-
-        // Loop untuk menghitung surplus/defisit per bulan (NOVEMBER, DECEMBER)
-        LocalDate start = LocalDate.of(year1, month1, 1);
-        LocalDate end = LocalDate.of(year2, month2, 1);
-
-        while (!start.isAfter(end)) {
-
-            int month = start.getMonthValue();
-            int year = start.getYear();
-            String monthName = start.getMonth().name();
-
-            Double totalPenerimaan = (Double) penerimaanInfakDetails
-                    .getOrDefault("Total Bulan " + monthName + " " + year, 0.0);
-
-            Double totalPendayagunaan = (Double) pendayagunaanInfakDetails
-                    .getOrDefault("Total Bulan " + monthName + " " + year, 0.0);
-
-            double surplus = totalPenerimaan - totalPendayagunaan;
-
-            surplusDefisitPerBulan.put(monthName + " " + year, surplus);
-
-            response.put("Surplus (Defisit) Dana " + monthName + " " + year, surplus);
-
-            start = start.plusMonths(1);
-        }
-
-        // Saldo Awal Dana infak (COA ID 46)
-        double saldoAwalDanaInfak = 0.0;
-        LocalDate currentDate = LocalDate.of(year1, month1, 1);
-
-        while (currentDate.getYear() < year2
-                || (currentDate.getYear() == year2 && currentDate.getMonthValue() <= month2)) {
-            int month = currentDate.getMonthValue();
-            int year = currentDate.getYear();
-
-            Optional<SaldoAwal> saldoAwalOpt = saldoAwalRepository.findSaldoAwalByCoaAndMonthAndYear(46L, month, year);
-            if (saldoAwalOpt.isPresent()) {
-                saldoAwalDanaInfak = saldoAwalOpt.get().getSaldoAwal();
-            } else {
-                String key = "Saldo Akhir Dana " + currentDate.minusMonths(1).getMonth().name() + " " + currentDate.minusMonths(1).getYear();
-                if (response.containsKey(key) && response.get(key) != null) {
-                    saldoAwalDanaInfak = (double) response.get(key);
-                } else {
-                    LocalDate prevDate = currentDate.minusMonths(1);
-                    Optional<SaldoAkhir> prevSaldoAkhir = saldoAkhirRepository.findByCoa_IdAndMonthAndYear(46L, prevDate.getMonthValue(), prevDate.getYear());
-                    saldoAwalDanaInfak = prevSaldoAkhir.map(SaldoAkhir::getSaldoAkhir).orElse(0.0);
-                }
-            }
-
-            response.put("Saldo Awal Dana " + currentDate.getMonth().name() + " " + year, saldoAwalDanaInfak);
-
-            // Mengambil surplus/defisit untuk bulan ini
-            String monthName = currentDate.getMonth().name();
-            double surplusDefisit = surplusDefisitPerBulan
-                    .getOrDefault(monthName + " " + (month == month2 ? year2 : year1), 0.0);
-
-            // Menghitung saldo akhir Dana Infak bulan ini
-            // double saldoAkhirDanaInfak = surplusDefisit >= 0
-            //         ? saldoAwalDanaInfak + surplusDefisit
-            //         : saldoAwalDanaInfak - surplusDefisit;
-            double saldoAkhirDanaInfak = saldoAwalDanaInfak + surplusDefisit;
-
-            Optional<SaldoAkhir> existingSaldoAkhir = saldoAkhirRepository.findByCoa_IdAndMonthAndYear(46L, month, year);
-            SaldoAkhir saldoAkhirDanaInfakEntity = existingSaldoAkhir.orElse(new SaldoAkhir());
-            saldoAkhirDanaInfakEntity.setCoa(coaRepository.findById(46L).orElse(null));
-            saldoAkhirDanaInfakEntity.setMonth(month);
-            saldoAkhirDanaInfakEntity.setYear(year);
-            saldoAkhirDanaInfakEntity.setSaldoAkhir(saldoAkhirDanaInfak);
-            saldoAkhirRepository.save(saldoAkhirDanaInfakEntity);
-
-            response.put("Saldo Akhir Dana " + currentDate.getMonth().name() + " " + year, saldoAkhirDanaInfak);
-
-            currentDate = currentDate.plusMonths(1);
-        }
-
-        return ResponseEntity.ok(response);
-    }
-
-    // Helper method to get details of COA with transactions
-    private Map<String, Object> getCoaDetailsWithTransactions(Long coaId, int month1, int year1, int month2,
-            int year2) {
-        Map<String, Object> details = new LinkedHashMap<>();
-        List<Coa> childCoas = coaRepository.findByParentAccount_IdIn(List.of(coaId));
-
-        double month1Total = 0.0;
-        double month2Total = 0.0;
-
-        // Menyimpan nama bulan untuk digunakan di akhir
+        Map<String, Object> penerimaanDana = new LinkedHashMap<>();
+        Map<String, Object> pendayagunaanDana = new LinkedHashMap<>();
+        
         String month1Name = Month.of(month1).name() + " " + year1;
         String month2Name = Month.of(month2).name() + " " + year2;
-
-        for (Coa childCoa : childCoas) {
-            // Menghitung breakdown per bulan untuk bulan 1 dan bulan 2
-            Map<String, Double> monthlyTotals = calculateMonthlyBreakdown(childCoa.getId(), month1, year1, month2,
-                    year2);
-
-            // Memasukkan data breakdown per bulan ke dalam details
-            details.put(childCoa.getAccountName(), monthlyTotals);
-
-            // Cek apakah data bulan pertama ada, jika ada tambah ke total bulan pertama
-            if (monthlyTotals.containsKey(month1Name)) {
-                month1Total += monthlyTotals.get(month1Name);
+        
+        for (Object[] row : results) {
+            String uraian = (String) row[0];
+            double val1 = row[1] != null ? ((Number) row[1]).doubleValue() : 0.0;
+            double val2 = row[2] != null ? ((Number) row[2]).doubleValue() : 0.0;
+            
+            if (uraian.startsWith("Penerimaan Dana Infaq/Shodaqoh")) {
+                Map<String, Double> breakdown = new LinkedHashMap<>();
+                breakdown.put(month1Name, val1);
+                breakdown.put(month2Name, val2);
+                penerimaanDana.put(uraian, breakdown);
+            } else if (uraian.equals("Jumlah Penerimaan Dana Infak")) {
+                penerimaanDana.put("Total Bulan " + month1Name, val1);
+                penerimaanDana.put("Total Bulan " + month2Name, val2);
+            } else if (uraian.equals("Dakwah") || uraian.equals("Pendidikan") || uraian.equals("Kesehatan") || 
+                       uraian.equals("Ekonomi") || uraian.equals("Sosial Kemanusiaan") || uraian.equals("Lingkungan")) {
+                Map<String, Double> breakdown = new LinkedHashMap<>();
+                breakdown.put(month1Name, val1);
+                breakdown.put(month2Name, val2);
+                pendayagunaanDana.put(uraian, breakdown);
+            } else if (uraian.equals("Jumlah Pendayagunaan Dana Infak")) {
+                pendayagunaanDana.put("Total Bulan " + month1Name, val1);
+                pendayagunaanDana.put("Total Bulan " + month2Name, val2);
+            } else if (uraian.equals("Surplus (Defisit) Dana Infak")) {
+                response.put("Surplus (Defisit) Dana " + month1Name, val1);
+                response.put("Surplus (Defisit) Dana " + month2Name, val2);
+            } else if (uraian.equals("Saldo Awal Dana Infak")) {
+                response.put("Saldo Awal Dana " + month1Name, val1);
+                response.put("Saldo Awal Dana " + month2Name, val2);
+            } else if (uraian.equals("Saldo Akhir Dana Infak")) {
+                response.put("Saldo Akhir Dana " + month1Name, val1);
+                response.put("Saldo Akhir Dana " + month2Name, val2);
+                
+                // Save Saldo Akhir to database to maintain consistency with previous logic
+                //saveSaldoAkhir(46L, month1, year1, val1);
+                //saveSaldoAkhir(46L, month2, year2, val2);
             }
-
-            // Cek apakah data bulan kedua ada, jika ada tambah ke total bulan kedua
-            if (monthlyTotals.containsKey(month2Name)) {
-                month2Total += monthlyTotals.get(month2Name);
-            }
         }
+        
+        response.put("Penerimaan Dana", penerimaanDana);
+        response.put("Pendayagunaan Dana", pendayagunaanDana);
 
-        // Memasukkan total masing-masing bulan ke dalam details dengan format yang
-        // lebih deskriptif
-        details.put("Total Bulan " + month1Name, month1Total);
-        details.put("Total Bulan " + month2Name, month2Total);
+        // Reorder map to match previous structure if necessary (Penerimaan and Pendayagunaan usually come first)
+        Map<String, Object> finalResponse = new LinkedHashMap<>();
+        finalResponse.put("Penerimaan Dana", response.get("Penerimaan Dana"));
+        finalResponse.put("Pendayagunaan Dana", response.get("Pendayagunaan Dana"));
+        
+        // Add Surplus, Saldo Awal, Saldo Akhir in order
+        finalResponse.put("Surplus (Defisit) Dana " + month1Name, response.get("Surplus (Defisit) Dana " + month1Name));
+        finalResponse.put("Surplus (Defisit) Dana " + month2Name, response.get("Surplus (Defisit) Dana " + month2Name));
+        finalResponse.put("Saldo Awal Dana " + month1Name, response.get("Saldo Awal Dana " + month1Name));
+        finalResponse.put("Saldo Akhir Dana " + month1Name, response.get("Saldo Akhir Dana " + month1Name));
+        finalResponse.put("Saldo Awal Dana " + month2Name, response.get("Saldo Awal Dana " + month2Name));
+        finalResponse.put("Saldo Akhir Dana " + month2Name, response.get("Saldo Akhir Dana " + month2Name));
 
-        return details;
+        return ResponseEntity.ok(finalResponse);
     }
 
-    private Map<String, Double> calculateMonthlyBreakdown(Long coaId, int month1, int year1, int month2, int year2) {
-        Map<String, Double> monthlyTotals = new LinkedHashMap<>();
-
-        LocalDate startDate = LocalDate.of(year1, month1, 1);
-        LocalDate endDate = LocalDate.of(year2, month2, 1).withDayOfMonth(1).plusMonths(1).minusDays(1);
-
-        LocalDate current = startDate;
-        while (!current.isAfter(endDate)) {
-            LocalDateTime monthStart = LocalDateTime.of(current.withDayOfMonth(1), LocalTime.MIN);
-            LocalDateTime monthEnd = LocalDateTime.of(current.withDayOfMonth(current.lengthOfMonth()), LocalTime.MAX);
-
-            // Gunakan query yang dimodifikasi
-            Double totalDebit = transactionRepository.sumDebitOrKreditByCoaIdAndParentIdAndDateRange(coaId, monthStart,
-                    monthEnd);
-
-            monthlyTotals.put(current.getMonth().name() + " " + current.getYear(),
-                    totalDebit != null ? totalDebit : 0.0);
-
-            current = current.plusMonths(1);
-        }
-
-        return monthlyTotals;
-    }
-
-    private Map<String, List<Long>> getPendayagunaanCategories() {
-
-        Map<String, List<Long>> categories = new LinkedHashMap<>();
-
-        categories.put("Dakwah", List.of(76L, 77L, 78L, 79L, 80L, 81L));
-        categories.put("Pendidikan", List.of(82L, 83L, 84L, 85L));
-        categories.put("Kesehatan", List.of(86L));
-        categories.put("Ekonomi", List.of(87L, 88L, 89L, 90L));
-        categories.put("Sosial Kemanusiaan", List.of(91L, 92L, 93L, 94L));
-        categories.put("Lingkungan", List.of(95L, 96L, 97L));
-
-        return categories;
-    }
-
-    private Map<String, Object> getPendayagunaanByCategory(
-            int month1, int year1, int month2, int year2) {
-
-        Map<String, Object> result = new LinkedHashMap<>();
-        Map<String, List<Long>> categories = getPendayagunaanCategories();
-
-        String month1Name = Month.of(month1).name() + " " + year1;
-        String month2Name = Month.of(month2).name() + " " + year2;
-
-        double totalMonth1 = 0;
-        double totalMonth2 = 0;
-
-        for (var entry : categories.entrySet()) {
-
-            String category = entry.getKey();
-            List<Long> coaIds = entry.getValue();
-
-            Map<String, Double> monthlyTotals = calculateMonthlyBreakdownForMultipleCoa(
-                    coaIds, month1, year1, month2, year2);
-
-            result.put(category, monthlyTotals);
-
-            totalMonth1 += monthlyTotals.getOrDefault(month1Name, 0.0);
-            totalMonth2 += monthlyTotals.getOrDefault(month2Name, 0.0);
-        }
-
-        result.put("Total Bulan " + month1Name, totalMonth1);
-        result.put("Total Bulan " + month2Name, totalMonth2);
-
-        return result;
-    }
-
-    private Map<String, Double> calculateMonthlyBreakdownForMultipleCoa(
-            List<Long> coaIds,
-            int month1, int year1,
-            int month2, int year2) {
-
-        Map<String, Double> monthlyTotals = new LinkedHashMap<>();
-
-        LocalDate startDate = LocalDate.of(year1, month1, 1);
-        LocalDate endDate = LocalDate.of(year2, month2, 1)
-                .plusMonths(1)
-                .minusDays(1);
-
-        LocalDate current = startDate;
-
-        while (!current.isAfter(endDate)) {
-
-            LocalDateTime monthStart = current.withDayOfMonth(1).atStartOfDay();
-
-            LocalDateTime monthEnd = current.withDayOfMonth(current.lengthOfMonth())
-                    .atTime(LocalTime.MAX);
-
-            Double total = transactionRepository.sumByCoaIdsAndDateRange(
-                    coaIds, monthStart, monthEnd);
-
-            monthlyTotals.put(
-                    current.getMonth().name() + " " + current.getYear(),
-                    total != null ? total : 0.0);
-
-            current = current.plusMonths(1);
-        }
-
-        return monthlyTotals;
+    private void saveSaldoAkhir(Long coaId, int month, int year, double saldoAkhir) {
+        Optional<SaldoAkhir> existingSaldoAkhir = saldoAkhirRepository.findByCoa_IdAndMonthAndYear(coaId, month, year);
+        SaldoAkhir saldoAkhirEntity = existingSaldoAkhir.orElse(new SaldoAkhir());
+        saldoAkhirEntity.setCoa(coaRepository.findById(coaId).orElse(null));
+        saldoAkhirEntity.setMonth(month);
+        saldoAkhirEntity.setYear(year);
+        saldoAkhirEntity.setSaldoAkhir(saldoAkhir);
+        saldoAkhirRepository.save(saldoAkhirEntity);
     }
 
 }
