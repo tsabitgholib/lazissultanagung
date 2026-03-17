@@ -114,7 +114,7 @@ public class PosServiceImpl implements PosService {
                 categoryEntity = zakat;
                 subCategoryName = zakat.getCategoryName();
                 if (!isTemporary) {
-                    zakatRepository.updateZakatCurrentAmount(request.getCategoryId(), request.getAmount());
+                    // zakatRepository.updateZakatCurrentAmount(request.getCategoryId(), request.getAmount());
                 }
                 break;
             }
@@ -126,7 +126,7 @@ public class PosServiceImpl implements PosService {
                 categoryEntity = infak;
                 subCategoryName = infak.getCategoryName();
                 if (!isTemporary) {
-                    infakRepository.updateInfakCurrentAmount(request.getCategoryId(), request.getAmount());
+                    // infakRepository.updateInfakCurrentAmount(request.getCategoryId(), request.getAmount());
                 }
                 break;
             }
@@ -138,7 +138,7 @@ public class PosServiceImpl implements PosService {
                 categoryEntity = dskl;
                 subCategoryName = dskl.getCategoryName();
                 if (!isTemporary) {
-                    dsklRepository.updateDSKLCurrentAmount(request.getCategoryId(), request.getAmount());
+                    // dsklRepository.updateDSKLCurrentAmount(request.getCategoryId(), request.getAmount());
                 }
                 break;
             }

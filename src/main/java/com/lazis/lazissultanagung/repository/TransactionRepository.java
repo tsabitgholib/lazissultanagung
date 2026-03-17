@@ -324,4 +324,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long>,
 
         @Query(value = "CALL sp_laporan_dana_pengelola(:bulan1, :bulan2)", nativeQuery = true)
         List<Object[]> getPengelolaActivityReportNative(@Param("bulan1") String bulan1, @Param("bulan2") String bulan2);
+
+    @Query(value = "SELECT t.nomor_bukti FROM transaction t WHERE t.nomor_bukti LIKE CONCAT('%/', :period) ORDER BY CAST(SUBSTRING_INDEX(t.nomor_bukti, '/', 1) AS UNSIGNED) DESC LIMIT 1", nativeQuery = true)
+    Optional<String> findLastNomorBuktiByPeriod(@Param("period") String period);
 }
