@@ -1,7 +1,10 @@
 package com.lazis.lazissultanagung.model;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "coa")
@@ -28,6 +31,9 @@ public class Coa {
     @JoinColumn(name = "parent_account_id")
     @Nullable
     private Coa parentAccount;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+7")
+    private LocalDateTime deletedAt;
 
     public enum AccountType {
         Asset, Liability, Equity, Revenue, Expense

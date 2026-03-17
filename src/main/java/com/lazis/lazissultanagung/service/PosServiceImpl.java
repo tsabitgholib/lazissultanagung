@@ -67,6 +67,9 @@ public class PosServiceImpl implements PosService {
     @Autowired
     private AgenRepository agenRepository;
 
+    @Autowired
+    private NomorBuktiService nomorBuktiService;
+
     @Override
     @Transactional
     public PosTransactionResponse createPosTransaction(PosTransactionRequest request, Long agenId) {
@@ -82,12 +85,7 @@ public class PosServiceImpl implements PosService {
         }
 
         // Generate Nomor Bukti
-        Integer lastTransactionNumber = transactionRepository.findLastTransactionNumber();
-        int newTransactionNumber = (lastTransactionNumber == null ? 1 : lastTransactionNumber + 1);
-        String transactionNumberFormatted = String.valueOf(newTransactionNumber);
-        String staticPart = "LAZ";
-        String datePart = LocalDateTime.now(ZoneId.of("Asia/Jakarta")).format(DateTimeFormatter.ofPattern("MM/yyyy"));
-        String nomorBukti = transactionNumberFormatted + "/" + staticPart + "/" + datePart;
+        String nomorBukti = nomorBuktiService.generateNomorBukti();
 
         String imageFileName = null;
         if (request.getImage() != null && !request.getImage().isEmpty()) {

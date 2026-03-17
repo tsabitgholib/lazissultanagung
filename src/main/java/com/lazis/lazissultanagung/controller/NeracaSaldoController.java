@@ -99,7 +99,7 @@ public class NeracaSaldoController {
     // }
 
     private Map<String, Object> calculateDetailsByParentId(List<Long> parentId, LocalDate startDate, LocalDate endDate) {
-        List<Coa> coaList = coaRepository.findByParentAccount_IdIn(parentId);
+        List<Coa> coaList = coaRepository.findByParentAccount_IdInAndDeletedAtIsNull(parentId);
         Map<String, Object> details = new LinkedHashMap<>();
         for (Coa coa : coaList) {
             Map<String, Object> accountDetails = calculateAccountDetails(coa.getId(), startDate, endDate);

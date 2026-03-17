@@ -7,6 +7,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Map;
@@ -68,7 +70,25 @@ public class CoaController {
 
     @DeleteMapping("/delete/{id}")
     public ResponseMessage deleteCoa(@PathVariable Long id){
+
+        return coaService.softDeleteCoa(id);
+    }
+
+    @DeleteMapping("/delete-permanent/{id}")
+    public ResponseMessage deleteCoaPermanent(@PathVariable Long id){
         return coaService.deleteCoa(id);
+    }
+
+    @PutMapping("/restore/{id}")
+    public ResponseEntity<ResponseMessage> restoreCoa(@PathVariable Long id) {
+        ResponseMessage response = coaService.restoreCoa(id);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/get-deleted")
+    public ResponseEntity<Page<Coa>> getDeletedCoa(Pageable pageable) {
+        Page<Coa> coaList = coaService.getDeletedCoa(pageable);
+        return ResponseEntity.ok(coaList);
     }
 
     @GetMapping("/pengelola")

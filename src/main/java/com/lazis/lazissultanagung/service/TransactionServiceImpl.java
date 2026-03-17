@@ -67,6 +67,9 @@ public class TransactionServiceImpl implements TransactionService {
     @Autowired
     private AgenService agenService;
 
+    @Autowired
+    private NomorBuktiService nomorBuktiService;
+
     @Override
     public Page<TransactionResponse> getAllTransaction(Integer month, Integer year, Pageable pageable) {
         return transactionRepository.findAllByMonthAndYear(month, year, pageable)
@@ -270,14 +273,7 @@ public class TransactionServiceImpl implements TransactionService {
                     .sum();
 
             // Dapatkan nomor transaksi terakhir
-            Integer lastTransactionNumber = transactionRepository.findLastTransactionNumber(); // Repository method
-            int newTransactionNumber = (lastTransactionNumber == null ? 1 : lastTransactionNumber + 1);
-
-            // Format nomor bukti
-            String transactionNumberFormatted = String.valueOf(newTransactionNumber);
-            String staticPart = "LAZ";
-            String datePart = LocalDateTime.now(ZoneId.of("Asia/Jakarta")).format(DateTimeFormatter.ofPattern("MM/yyyy"));
-            String nomorBukti = transactionNumberFormatted + "/" + staticPart + "/" + datePart;
+            String nomorBukti = nomorBuktiService.generateNomorBukti();
 
             boolean isPenyaluran = jurnalUmumRequest.isPenyaluran() ||
                     jurnalUmumRequest.getCategoryType().equalsIgnoreCase("pengelola");

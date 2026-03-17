@@ -83,7 +83,7 @@ public class SaldoAwalService {
 
     public List<CoaSaldoResponse> getAllCoaWithSaldoAwal() {
         // Ambil semua COA yang memiliki parentAccount != null
-        List<Coa> coas = coaRepository.findByParentAccountIsNotNull(Sort.by(Sort.Direction.ASC, "accountCode"));
+        List<Coa> coas = coaRepository.findByParentAccountIsNotNullAndDeletedAtIsNull(Sort.by(Sort.Direction.ASC, "accountCode"));
 
         // Map COA ke dalam response DTO
         List<CoaSaldoResponse> responses = new ArrayList<>();

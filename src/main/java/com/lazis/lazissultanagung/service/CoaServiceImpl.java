@@ -5,9 +5,13 @@ import com.lazis.lazissultanagung.exception.BadRequestException;
 import com.lazis.lazissultanagung.model.Coa;
 import com.lazis.lazissultanagung.repository.CoaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -20,17 +24,17 @@ public class CoaServiceImpl implements CoaService{
 
     @Override
     public List<Coa> getAllParentCoa(){
-        return coaRepository.findByParentAccountIsNull(Sort.by(Sort.Direction.ASC, "accountCode"));
+        return coaRepository.findByParentAccountIsNullAndDeletedAtIsNull(Sort.by(Sort.Direction.ASC, "accountCode"));
     }
 
     @Override
     public List<Coa> getAllCoa(){
-        return coaRepository.findByParentAccountIsNotNull(Sort.by(Sort.Direction.ASC, "accountCode"));
+        return coaRepository.findByParentAccountIsNotNullAndDeletedAtIsNull(Sort.by(Sort.Direction.ASC, "accountCode"));
     }
 
     @Override
     public List<Coa> getAllCoas() {
-        return coaRepository.findAll(Sort.by(Sort.Direction.ASC, "accountCode"));
+        return coaRepository.findAllActive(Sort.by(Sort.Direction.ASC, "accountCode"));
     }
 
     @Override
@@ -66,6 +70,7 @@ public class CoaServiceImpl implements CoaService{
     @Override
     public Coa editCoa(Long id, Coa coa){
         Coa editedCoa = coaRepository.findById(id)
+                .filter(c -> c.getDeletedAt() == null)
                 .orElseThrow(()-> new BadRequestException("COA tidak ditemukan"));
 
         editedCoa.setAccountCode(coa.getAccountCode());
@@ -81,7 +86,39 @@ public class CoaServiceImpl implements CoaService{
         Coa deleteCoa = coaRepository.findById(id)
                 .orElseThrow(()-> new BadRequestException("COA tidak ditemukan"));
         coaRepository.delete(deleteCoa);
-        return new ResponseMessage(true, "COA berhasil dihapus");
+        return new ResponseMessage(true, "COA berhasil dihapus permanen");
+    }
+
+    @Override
+    public ResponseMessage softDeleteCoa(Long id) {
+        Coa coa = coaRepository.findById(id)
+                .filter(c -> c.getDeletedAt() == null)
+                .orElseThrow(() -> new BadRequestException("COA tidak ditemukan"));
+        coa.setDeletedAt(LocalDateTime.now());
+        coaRepository.save(coa);
+        return new ResponseMessage(true, "COA berhasil dihapus (soft delete)");
+    }
+
+    @Override
+    public ResponseMessage restoreCoa(Long id) {
+        Coa coa = coaRepository.findById(id)
+                .filter(c -> c.getDeletedAt() != null)
+                .orElseThrow(() -> new BadRequestException("COA yang terhapus tidak ditemukan"));
+        coa.setDeletedAt(null);
+        coaRepository.save(coa);
+        return new ResponseMessage(true, "COA berhasil dikembalikan");
+    }
+
+    @Override
+    public Page<Coa> getDeletedCoa(Pageable pageable) {
+
+        Pageable sortedPageable = PageRequest.of(
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                Sort.by(Sort.Direction.ASC, "accountCode")
+        );
+
+        return coaRepository.findByDeletedAtIsNotNull(sortedPageable);
     }
 
     @Override

@@ -273,7 +273,7 @@ public class JurnalController {
             Coa parentCoa = coaRepository.findById(coaId).orElse(null);
             if (parentCoa != null) {
                 Map<String, Object> parentBreakdown = new LinkedHashMap<>();
-                List<Coa> subAccounts = coaRepository.findByParentAccount_IdIn(List.of(parentCoa.getId()));
+                List<Coa> subAccounts = coaRepository.findByParentAccount_IdInAndDeletedAtIsNull(List.of(parentCoa.getId()));
 
                 for (Coa subCoa : subAccounts) {
                     Map<String, Double> subBreakdown = calculateMonthlyBreakdown(subCoa.getId(), month1, year1, month2, year2);
