@@ -468,19 +468,7 @@ public class TransactionServiceImpl implements TransactionService {
 
             transactionRepository.save(transaction);
             
-            // Update Category Amount logic
-            // We only update once per transaction pair (usually identified by non-zero debit or credit, or just once per unique category entity ID)
-            // Since PosServiceImpl updates amount regardless of Debit/Credit, we should be careful.
-            // PosServiceImpl updates ONCE per request. Here we have 2 records (Debit/Credit).
-            // Both have the same transactionAmount.
-            // We should update only once.
-            // Let's check the Debit record (usually where money comes IN to the system account, wait.
-            // POS: Debit = Cash/Bank, Credit = Revenue (Zakat/Infak).
-            // Usually revenue recognition is on Credit side.
-            // Let's stick to updating once.
-            
             if (!processedCategories.contains(temp.getNomorBukti())) {
-                 updateCategoryAmount(temp);
                  processedCategories.add(temp.getNomorBukti());
             }
         }
@@ -488,11 +476,6 @@ public class TransactionServiceImpl implements TransactionService {
         temporaryTransactionRepository.deleteAll(tempTransactions);
 
         return new ResponseMessage(true, "Transaction validated successfully");
-    }
-
-    private void updateCategoryAmount(TemporaryTransaction temp) {
-        // Logika ini dinonaktifkan karena currentAmount dan amount sekarang dihitung secara dinamis
-        // menggunakan @Formula berdasarkan tabel transaction.
     }
 
 

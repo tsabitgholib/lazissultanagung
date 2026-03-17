@@ -155,7 +155,7 @@ public class PosServiceImpl implements PosService {
                 categoryEntity = campaign;
                 subCategoryName = campaign.getCampaignName();
                 if (!isTemporary) {
-                    campaignRepository.updateCampaignCurrentAmount(request.getCategoryId(), request.getAmount());
+//                    campaignRepository.updateCampaignCurrentAmount(request.getCategoryId(), request.getAmount());
                 }
                 break;
             }
@@ -302,6 +302,7 @@ public class PosServiceImpl implements PosService {
 
         // Prepare Response
         PosTransactionResponse response = new PosTransactionResponse();
+        response.setNomorBukti(nomorBukti);
         response.setTanggal(request.getDate());
         response.setNama(request.getName());
         response.setNoHp(request.getPhoneNumber());

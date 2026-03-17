@@ -126,6 +126,9 @@ public class PosController {
             return ResponseEntity.ok(response);
         } catch (BadRequestException e) {
             return ResponseEntity.badRequest().body(new ResponseMessage(false, e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error creating POS transaction", e);
+            return ResponseEntity.internalServerError().body(new ResponseMessage(false, "Terjadi kesalahan: " + e.getMessage()));
         }
     }
 
