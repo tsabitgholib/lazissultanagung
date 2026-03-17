@@ -1,11 +1,13 @@
 package com.lazis.lazissultanagung.service;
 
+import com.lazis.lazissultanagung.dto.TransactionEditRequest;
 import com.lazis.lazissultanagung.dto.request.JurnalUmumRequest;
 import com.lazis.lazissultanagung.dto.response.ResponseMessage;
 import com.lazis.lazissultanagung.dto.response.TransactionResponse;
 import com.lazis.lazissultanagung.dto.response.DonaturTransactionsHistoryResponse;
 import com.lazis.lazissultanagung.exception.BadRequestException;
 import com.lazis.lazissultanagung.model.Transaction;
+import com.lazis.lazissultanagung.model.TransactionEditLog;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
@@ -50,4 +52,12 @@ public interface TransactionService {
     ResponseMessage validateTemporaryTransaction(String nomorBukti);
 
     List<PosHistoryResponse> getAllTemporaryTransactions();
+
+    ResponseMessage editTransactionByNomorBukti(String nomorBukti, TransactionEditRequest request) throws BadRequestException;
+
+    TransactionEditRequest getTransactionByNomorBuktiSimple(String nomorBukti) throws BadRequestException;
+
+    Page<TransactionEditLog> getAllTransactionEditLogs(Pageable pageable);
+
+    ResponseMessage softDeleteTransactionByNomorBukti(String nomorBukti) throws BadRequestException;
 }

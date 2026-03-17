@@ -1,21 +1,23 @@
 package com.lazis.lazissultanagung.controller;
 
+import com.lazis.lazissultanagung.dto.TransactionEditRequest;
 import com.lazis.lazissultanagung.dto.request.JurnalUmumRequest;
-
 import com.lazis.lazissultanagung.dto.response.DonaturTransactionsHistoryResponse;
 import com.lazis.lazissultanagung.dto.response.PosHistoryResponse;
 import com.lazis.lazissultanagung.dto.response.ResponseMessage;
 import com.lazis.lazissultanagung.dto.response.TransactionResponse;
 import com.lazis.lazissultanagung.exception.BadRequestException;
 import com.lazis.lazissultanagung.model.Transaction;
+import com.lazis.lazissultanagung.model.TransactionEditLog;
 import com.lazis.lazissultanagung.service.TransactionService;
-import org.apache.tomcat.util.net.openssl.ciphers.Authentication;
+import org.springframework.security.core.Authentication;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -169,6 +171,47 @@ public class TransactionController {
         return ResponseEntity.ok(result);
     }
 
+    @PutMapping("/edit-by-nomor-bukti")
+    public ResponseEntity<ResponseMessage> editTransaction(
+            @RequestParam String nomorBukti,
+            @RequestBody TransactionEditRequest request) {
+        try {
+            ResponseMessage response = transactionService.editTransactionByNomorBukti(nomorBukti, request);
+            return ResponseEntity.ok(response);
+        } catch (BadRequestException e) {
+            return ResponseEntity.badRequest().body(new ResponseMessage(false, e.getMessage()));
+        }
+    }
 
+    @GetMapping("/get-by-nomor-bukti")
+    public ResponseEntity<?> getTransactionByNomorBukti(@RequestParam String nomorBukti) {
+        try {
+            TransactionEditRequest response = transactionService.getTransactionByNomorBuktiSimple(nomorBukti);
+            return ResponseEntity.ok(response);
+        } catch (BadRequestException e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(error);
+        }
+    }
+
+    @GetMapping("/edit-logs")
+    public ResponseEntity<Page<TransactionEditLog>> getTransactionEditLogs(
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "12") int size) {
+        PageRequest pageRequest = PageRequest.of(page, size);
+        Page<TransactionEditLog> logs = transactionService.getAllTransactionEditLogs(pageRequest);
+        return ResponseEntity.ok(logs);
+    }
+
+    @DeleteMapping("/soft-delete")
+    public ResponseEntity<ResponseMessage> softDeleteTransaction(@RequestParam String nomorBukti) {
+        try {
+            ResponseMessage response = transactionService.softDeleteTransactionByNomorBukti(nomorBukti);
+            return ResponseEntity.ok(response);
+        } catch (BadRequestException e) {
+            return ResponseEntity.badRequest().body(new ResponseMessage(false, e.getMessage()));
+        }
+    }
 
 }

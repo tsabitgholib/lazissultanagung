@@ -45,7 +45,7 @@ public class Transaction {
     @Column(length = 255)
     private String paymentProofImage;
 
-    @Column(nullable = false, updatable = false)
+    @Column(nullable = false)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+7")
     private LocalDateTime transactionDate;
 
@@ -97,4 +97,7 @@ public class Transaction {
 
     private Long agenId;
     private Long eventId;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+7")
+    private LocalDateTime deletedAt;
 }

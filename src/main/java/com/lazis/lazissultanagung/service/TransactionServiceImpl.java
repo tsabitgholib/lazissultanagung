@@ -1,5 +1,6 @@
 package com.lazis.lazissultanagung.service;
 
+import com.lazis.lazissultanagung.dto.TransactionEditRequest;
 import com.lazis.lazissultanagung.dto.request.JurnalUmumRequest;
 import com.lazis.lazissultanagung.dto.response.PosHistoryResponse;
 import com.lazis.lazissultanagung.dto.response.ResponseMessage;
@@ -59,6 +60,9 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Autowired
     private TemporaryTransactionRepository temporaryTransactionRepository;
+
+    @Autowired
+    private TransactionEditLogRepository transactionEditLogRepository;
 
     @Autowired
     private AgenService agenService;
@@ -1021,5 +1025,127 @@ public class TransactionServiceImpl implements TransactionService {
         return result;
     }
 
+    @Override
+    @Transactional
+    public ResponseMessage editTransactionByNomorBukti(String nomorBukti, TransactionEditRequest request) throws BadRequestException {
+        List<Transaction> transactions = transactionRepository.findByNomorBukti(nomorBukti);
+        if (transactions.isEmpty()) {
+            throw new BadRequestException("Transaksi dengan nomor bukti " + nomorBukti + " tidak ditemukan");
+        }
+
+        // Simpan data lama untuk log (ambil dari salah satu baris, misalnya yang pertama)
+        Transaction firstTx = transactions.get(0);
+        String oldData = String.format(
+            "Username: %s, Phone: %s, Email: %s, Address: %s, Amount: %.2f, Message: %s, Date: %s",
+            firstTx.getUsername(), firstTx.getPhoneNumber(), firstTx.getEmail(), firstTx.getAddress(),
+            firstTx.getTransactionAmount(), firstTx.getMessage(), firstTx.getTransactionDate()
+        );
+
+        // Update semua baris yang memiliki nomor bukti yang sama
+        for (Transaction t : transactions) {
+            if (request.getUsername() != null) t.setUsername(request.getUsername());
+            if (request.getPhoneNumber() != null) t.setPhoneNumber(request.getPhoneNumber());
+            if (request.getEmail() != null) t.setEmail(request.getEmail());
+            if (request.getAddress() != null) t.setAddress(request.getAddress());
+            if (request.getMessage() != null) t.setMessage(request.getMessage());
+            if (request.getTransactionDate() != null) t.setTransactionDate(request.getTransactionDate());
+            
+            if (request.getTransactionAmount() > 0) {
+                t.setTransactionAmount(request.getTransactionAmount());
+                // Update debit/kredit jika nilainya lebih dari 0
+                if (t.getDebit() > 0) {
+                    t.setDebit(request.getTransactionAmount());
+                } else if (t.getKredit() > 0) {
+                    t.setKredit(request.getTransactionAmount());
+                }
+            }
+            transactionRepository.save(t);
+        }
+
+        // Catat log perubahan
+        String newData = String.format(
+            "Username: %s, Phone: %s, Email: %s, Address: %s, Amount: %.2f, Message: %s, Date: %s",
+            request.getUsername(), request.getPhoneNumber(), request.getEmail(), request.getAddress(),
+            request.getTransactionAmount(), request.getMessage(), request.getTransactionDate()
+        );
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String editedBy = (auth != null) ? auth.getName() : "System";
+
+        TransactionEditLog log = new TransactionEditLog();
+        log.setNomorBukti(nomorBukti);
+        log.setOldData(oldData);
+        log.setNewData(newData);
+        log.setStatus("EDIT");
+        log.setEditedBy(editedBy);
+        log.setEditTime(LocalDateTime.now());
+        transactionEditLogRepository.save(log);
+
+        return new ResponseMessage(true, "Transaksi dengan nomor bukti " + nomorBukti + " berhasil diperbarui");
+    }
+
+    @Override
+    public TransactionEditRequest getTransactionByNomorBuktiSimple(String nomorBukti) throws BadRequestException {
+        List<Transaction> transactions = transactionRepository.findByNomorBukti(nomorBukti);
+        if (transactions.isEmpty()) {
+            throw new BadRequestException("Transaksi dengan nomor bukti " + nomorBukti + " tidak ditemukan");
+        }
+
+        Transaction t = transactions.get(0);
+        
+        TransactionEditRequest response = new TransactionEditRequest();
+        response.setUsername(t.getUsername());
+        response.setPhoneNumber(t.getPhoneNumber());
+        response.setEmail(t.getEmail());
+        response.setAddress(t.getAddress());
+        response.setTransactionAmount(t.getTransactionAmount());
+        response.setMessage(t.getMessage());
+        response.setTransactionDate(t.getTransactionDate());
+        
+        return response;
+    }
+
+    @Override
+    public Page<TransactionEditLog> getAllTransactionEditLogs(Pageable pageable) {
+        return transactionEditLogRepository.findAllByOrderByEditTimeDesc(pageable);
+    }
+
+    @Override
+    @Transactional
+    public ResponseMessage softDeleteTransactionByNomorBukti(String nomorBukti) throws BadRequestException {
+        List<Transaction> transactions = transactionRepository.findByNomorBukti(nomorBukti);
+        if (transactions.isEmpty()) {
+            throw new BadRequestException("Transaksi dengan nomor bukti " + nomorBukti + " tidak ditemukan");
+        }
+
+        // Simpan data lama untuk log
+        Transaction firstTx = transactions.get(0);
+        String oldData = String.format(
+            "Username: %s, Phone: %s, Email: %s, Address: %s, Amount: %.2f, Message: %s, Date: %s",
+            firstTx.getUsername(), firstTx.getPhoneNumber(), firstTx.getEmail(), firstTx.getAddress(),
+            firstTx.getTransactionAmount(), firstTx.getMessage(), firstTx.getTransactionDate()
+        );
+
+        LocalDateTime now = LocalDateTime.now();
+        for (Transaction t : transactions) {
+            t.setDeletedAt(now);
+            transactionRepository.save(t);
+        }
+
+        // Catat log penghapusan
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String editedBy = (auth != null) ? auth.getName() : "System";
+
+        TransactionEditLog log = new TransactionEditLog();
+        log.setNomorBukti(nomorBukti);
+        log.setOldData(oldData);
+        log.setNewData("DELETED");
+        log.setStatus("DELETE");
+        log.setEditedBy(editedBy);
+        log.setEditTime(now);
+        transactionEditLogRepository.save(log);
+
+        return new ResponseMessage(true, "Transaksi dengan nomor bukti " + nomorBukti + " berhasil dihapus (soft delete)");
+    }
 
 }
